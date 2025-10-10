@@ -16,3 +16,5 @@ TaskMaster: Your Life, Gamified.
 ​The rewards and their point costs.
 ​The components of your forfeits—tasks, positions, and base duration.
 ​💾 Persistent Local Storage: No account needed. All your settings, progress, and points are saved directly in your browser, ready for your next session.
+
+Play at https://timergames.github.io/Taskmaster/ 
