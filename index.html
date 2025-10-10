@@ -105,46 +105,24 @@
         },
 
         saveState() { localStorage.setItem('taskmaster_state', JSON.stringify(this.state)); },
-        loadState() {
-            try {
-                const s = localStorage.getItem('taskmaster_state');
-                this.state = s ? { ...this.getDefaultState(), ...JSON.parse(s) } : this.getDefaultState();
-                if (!this.state.rewardLog) this.state.rewardLog = [];
-            } catch (error) {
-                console.error("Error loading state, resetting to default:", error);
-                this.state = this.getDefaultState();
-            }
-        },
+        loadState() { try { const s = localStorage.getItem('taskmaster_state'); this.state = s ? { ...this.getDefaultState(), ...JSON.parse(s) } : this.getDefaultState(); if (!this.state.rewardLog) this.state.rewardLog = []; } catch (error) { console.error("Error loading state, resetting to default:", error); this.state = this.getDefaultState(); } },
 
         init() {
-            console.log("App initializing...");
             this.loadState();
             this.attachEventListeners();
-            
-            if (!this.state.soundInitialized) {
-                this.showModal('sound-modal');
-            } else {
-                this.runStartupLogic();
-            }
+            if (!this.state.soundInitialized) { this.showModal('sound-modal'); } 
+            else { this.runStartupLogic(); }
         },
         
         runStartupLogic() {
-            console.log("Running startup logic...");
             this.checkDateAndReset();
             this.checkAndAdjustPrices();
             this.checkForNewTask();
             this.render();
-            console.log("Startup complete. Final state:", this.state);
         },
         
         attachEventListeners() {
-            document.getElementById('enable-sound-btn').addEventListener('click', async () => {
-                await Tone.start();
-                this.state.soundInitialized = true;
-                this.saveState();
-                this.hideModal('sound-modal');
-                this.runStartupLogic();
-            });
+            document.getElementById('enable-sound-btn').addEventListener('click', async () => { await Tone.start(); this.state.soundInitialized = true; this.saveState(); this.hideModal('sound-modal'); this.runStartupLogic(); });
             document.getElementById('manage-btn').addEventListener('click', () => this.showModal('manage-modal'));
             document.getElementById('shop-btn').addEventListener('click', () => { this.renderShopModal(true); this.showModal('shop-modal'); });
             document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', e => this.hideModal(e.target.dataset.modal)));
@@ -163,52 +141,64 @@
         checkDateAndReset() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastTaskDate!==t){this.state.lastTaskDate=t;this.state.dailyTasksAssigned=0;this.saveState();} },
         checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){if(this.state.rewardsRedeemedToday>=3){this.state.rewards.forEach(r=>r.points=Math.round(r.points*1.05));this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.rewards.forEach(r=>r.points=Math.max(1,Math.round(r.points*0.95)));this.state.saleIsOn=true;}else{this.state.saleIsOn=false;}this.state.rewardsRedeemedToday=0;}this.state.lastPriceCheckDate=t;this.saveState(); },
         
-        checkForNewTask() {
-            if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) {
-                this.assignTask();
-            }
-        },
+        checkForNewTask() { if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { this.assignTask(); } },
         
         assignTask() {
             const enabledTasks = this.state.tasks.filter(t => t.enabled);
             if (enabledTasks.length === 0) { return; }
             const randomTask = enabledTasks[Math.floor(Math.random() * enabledTasks.length)];
             let nameString = (randomTask.unit === 'area') ? `${randomTask.name}` : `${randomTask.value} ${randomTask.unit} ${randomTask.name}`;
-            
             this.state.activeTask = { id: randomTask.id, name: nameString, assignedAt: Date.now(), type: 'task', points: randomTask.points };
             this.state.dailyTasksAssigned++;
-            
             this.playNotificationSound();
             this.saveState(); 
         },
 
         completeTask() { clearInterval(this.timerInterval);const p=this.state.activeTask.points;this.state.points+=p;this.state.activeTask=null;this.saveState();this.showResult('Task Complete!',`You earned ${p} points. Visit the Reward Shop to spend them!`);this.render();},
-        failTask() { clearInterval(this.timerInterval);this.state.activeTask=null;this.assignForfeit();},
-        assignForfeit() { const t=this.state.forfeits.tasks.filter(t=>t.enabled),p=this.state.forfeits.positions.filter(p=>p.enabled);if(t.length===0||p.length===0){this.showResult('Forfeit Skipped','No forfeits are enabled. Lucky you!','');this.saveState();this.render();return;}const r=t[Math.floor(Math.random()*t.length)],o=p[Math.floor(Math.random()*o.length)];this.state.activeTask={id:`f-${Date.now()}`,name:r.name,position:o.name,duration:this.state.forfeits.duration,assignedAt:Date.now(),type:'forfeit'};this.saveState();this.showResult('Task Failed','A forfeit has been assigned.');this.render();},
+        
+        failTask() {
+            clearInterval(this.timerInterval);
+            this.state.activeTask = null; // Clear the old task
+            this.assignForfeit(); // This will now immediately assign and render the forfeit
+        },
+
+        assignForfeit() {
+            const enabledForfeitTasks = this.state.forfeits.tasks.filter(t => t.enabled);
+            const enabledForfeitPositions = this.state.forfeits.positions.filter(p => p.enabled);
+
+            if (enabledForfeitTasks.length === 0 || enabledForfeitPositions.length === 0) {
+                this.showResult('Forfeit Skipped', 'No forfeits are enabled. Lucky you!');
+                this.state.activeTask = null; // Ensure nothing is active
+                this.saveState();
+                this.render();
+                return;
+            }
+
+            const randomTask = enabledForfeitTasks[Math.floor(Math.random() * enabledForfeitTasks.length)];
+            const randomPosition = enabledForfeitPositions[Math.floor(Math.random() * enabledForfeitPositions.length)];
+
+            this.state.activeTask = {
+                id: `f-${Date.now()}`, name: randomTask.name, position: randomPosition.name,
+                duration: this.state.forfeits.duration, assignedAt: Date.now(), type: 'forfeit'
+            };
+
+            this.saveState();
+            this.render(); // Immediately re-render the screen to show the new forfeit
+        },
+
         handleForfeitFeedback(f){const d=this.state.forfeits.duration;if(f==='easy'){this.state.forfeits.duration=Math.round(d*1.1);if(this.state.tasksPerDay<12)this.state.tasksPerDay++;}else if(f==='ok'){this.state.forfeits.duration=Math.round(d*1.05);}else if(f==='hard'){this.state.forfeits.duration=Math.max(60,Math.round(d*.9));if(this.state.tasksPerDay>1)this.state.tasksPerDay--;}this.state.activeTask=null;this.hideModal('feedback-modal');this.saveState();this.showResult('Forfeit Complete','Your feedback has been recorded.');this.render();},
         redeemReward(e){const{id:t}=e.target.dataset,r=this.state.rewards.find(r=>r.id===t);if(r&&this.state.points>=r.points){this.state.points-=r.points;this.state.rewardsRedeemedToday++;this.state.rewardLog.unshift({name:r.name,points:r.points,redeemedAt:Date.now()});this.saveState();this.render();this.renderShopModal(true);this.showResult('Reward Claimed!',`You redeemed "${r.name}" for ${r.points} points.`);}},
         
-        render() { 
-            console.log("Rendering screen...");
-            this.renderMainContent(); 
-            this.renderManagement(); 
-            document.getElementById('points-display').textContent = this.state.points; 
-        },
+        render() { this.renderMainContent(); this.renderManagement(); document.getElementById('points-display').textContent = this.state.points; },
         
         renderMainContent() {
             const mainContent = document.getElementById('main-content');
-            // This logic is now more defensive to prevent blank screens.
-            if (this.state.activeTask && this.state.activeTask.type === 'task') {
-                this.renderActiveTask(mainContent);
-            } else if (this.state.activeTask && this.state.activeTask.type === 'forfeit') {
-                this.renderActiveForfeit(mainContent);
-            } else {
+            if (this.state.activeTask && this.state.activeTask.type === 'task') { this.renderActiveTask(mainContent); } 
+            else if (this.state.activeTask && this.state.activeTask.type === 'forfeit') { this.renderActiveForfeit(mainContent); } 
+            else {
                  const enabledTasks = this.state.tasks.filter(t => t.enabled);
-                 if (enabledTasks.length === 0) {
-                     mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-warning mb-2">No Tasks Enabled</h2><p class="text-brand-subtle">Please go to 'Manage' and enable at least one task to begin.</p>`;
-                 } else {
-                     mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">At ease.</h2><p class="text-brand-subtle">Waiting for the next task.</p>`;
-                 }
+                 if (enabledTasks.length === 0) { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-warning mb-2">No Tasks Enabled</h2><p class="text-brand-subtle">Please go to 'Manage' and enable at least one task to begin.</p>`; } 
+                 else { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">At ease.</h2><p class="text-brand-subtle">Waiting for the next task.</p>`; }
             }
         },
         renderActiveTask(c){const t=this.state.activeTask,d=t.assignedAt+864e5;c.innerHTML=`<p class="text-brand-subtle mb-2">Your Task:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button><button id="fail-task-btn" class="btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg">Can't Do It</button></div>`;const e=document.getElementById('timer');clearInterval(this.timerInterval);this.timerInterval=setInterval(()=>{const n=Date.now(),s=d-n;if(s<=0){clearInterval(this.timerInterval);e.textContent="Time's Up!";this.failTask();}else{const h=Math.floor(s%864e5/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3);e.textContent=`Time left: ${h}h ${m}m ${c}s`;}},1e3);},
@@ -235,5 +225,4 @@
 
 </body>
 </html>
-
 
