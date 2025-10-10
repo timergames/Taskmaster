@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,7 +83,7 @@
         </div>
     </div>
     
-    <!-- Other Modals (Manage, Shop, etc.) -->
+    <!-- Other Modals -->
     <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Manage Your Setup</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button></div><div class="flex border-b border-gray-700 px-6"><button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6">Tasks</button><button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6">Forfeits</button><button data-tab="settings" class="tab text-lg font-semibold py-4">Settings</button></div><div class="p-6 overflow-y-auto"><div id="tasks-tab" class="tab-content"></div><div id="forfeits-tab" class="tab-content hidden"></div><div id="settings-tab" class="tab-content hidden"></div></div></div></div>
     <div id="shop-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Reward Shop</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="shop-modal">&times;</button></div><div id="shop-content" class="p-6 overflow-y-auto"></div><div class="p-4 border-t border-gray-700"><button id="log-toggle-btn" class="w-full btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">View Purchase History</button></div></div></div>
     <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 id="result-title" class="text-2xl font-bold mb-4"></h2><p id="result-message" class="text-brand-subtle mb-6"></p><div id="result-details" class="mb-6"></div><button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button></div></div>
@@ -99,7 +98,7 @@
             return {
                 points: 100, tasksPerDay: 1, activeTask: null, lastTaskDate: null,
                 dailyTasksAssigned: 0, rewardsRedeemedToday: 0, lastPriceCheckDate: null,
-                saleIsOn: false, rewardLog: [], soundInitialized: false, // New state for sound
+                saleIsOn: false, rewardLog: [], soundInitialized: false,
                 tasks: [ { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true }, { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true }, { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't5', name: 'Wall sit', value: 1, unit: 'minute', points: 15, enabled: true }, { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true }, { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true }, { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true }, { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true }, ],
                 rewards: [ { id: 'r1', name: 'Eat Candy', points: 50 }, { id: 'r2', name: '30min Me Time', points: 100 }, { id: 'r3', name: 'Watch a Movie', points: 200 }, { id: 'r4', name: 'Smoke a Cigarette', points: 25 }, ],
                 forfeits: {
@@ -114,21 +113,30 @@
         loadState() { const s=localStorage.getItem('taskmaster_state');this.state=s?{...this.getDefaultState(),...JSON.parse(s)}:this.getDefaultState();if(!this.state.rewardLog)this.state.rewardLog=[]; },
 
         init() {
+            console.log("App initializing...");
             this.loadState();
             this.attachEventListeners();
             
+            // App logic will now wait for sound initialization
             if (!this.state.soundInitialized) {
                 this.showModal('sound-modal');
             } else {
-                this.startApp();
+                this.runStartupLogic();
             }
         },
         
-        startApp() {
+        runStartupLogic() {
+            console.log("Running startup logic...");
+            // This is the main logic sequence.
+            // 1. Check date and reset daily counters if needed.
             this.checkDateAndReset();
+            // 2. Adjust shop prices based on yesterday's activity.
             this.checkAndAdjustPrices();
-            this.checkForNewTask(true);
+            // 3. Determine if a new task should be assigned.
+            this.checkForNewTask();
+            // 4. Now, render the screen with the finalized state.
             this.render();
+            console.log("Startup complete. Final state:", this.state);
         },
         
         attachEventListeners() {
@@ -137,15 +145,14 @@
                 this.state.soundInitialized = true;
                 this.saveState();
                 this.hideModal('sound-modal');
-                this.startApp();
+                this.runStartupLogic();
             });
-            // ... (rest of event listeners are unchanged)
             document.getElementById('manage-btn').addEventListener('click', () => this.showModal('manage-modal'));
             document.getElementById('shop-btn').addEventListener('click', () => { this.renderShopModal(true); this.showModal('shop-modal'); });
             document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', e => this.hideModal(e.target.dataset.modal)));
             document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', e => this.switchTab(e.target)));
             document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'fail-task-btn') this.failTask(); if (e.target.id === 'complete-forfeit-btn') this.showModal('feedback-modal'); });
-            document.getElementById('result-ok-btn').addEventListener('click', () => { this.hideModal('result-modal'); this.checkForNewTask(); });
+            document.getElementById('result-ok-btn').addEventListener('click', () => { this.hideModal('result-modal'); this.checkForNewTask(); this.render(); });
             document.querySelectorAll('.feedback-btn').forEach(btn => btn.addEventListener('click', e => this.handleForfeitFeedback(e.target.dataset.feedback)));
             document.getElementById('edit-cancel-btn').addEventListener('click', () => this.hideModal('edit-modal'));
             document.getElementById('edit-save-btn').addEventListener('click', () => this.handleSave());
@@ -153,21 +160,22 @@
             document.getElementById('log-toggle-btn').addEventListener('click', e => { const i = e.target.textContent.includes('History'); this.renderShopModal(!i); });
         },
         
-        playNotificationSound() {
-            if (this.state.soundInitialized) {
-                const synth = new Tone.Synth().toDestination();
-                synth.triggerAttackRelease("C5", "8n");
-            }
-        },
+        playNotificationSound() { if (this.state.soundInitialized) { const synth = new Tone.Synth().toDestination(); synth.triggerAttackRelease("C5", "8n"); } },
 
         checkDateAndReset() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastTaskDate!==t){this.state.lastTaskDate=t;this.state.dailyTasksAssigned=0;this.saveState();} },
         checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){if(this.state.rewardsRedeemedToday>=3){this.state.rewards.forEach(r=>r.points=Math.round(r.points*1.05));this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.rewards.forEach(r=>r.points=Math.max(1,Math.round(r.points*0.95)));this.state.saleIsOn=true;}else{this.state.saleIsOn=false;}this.state.rewardsRedeemedToday=0;}this.state.lastPriceCheckDate=t;this.saveState(); },
-        checkForNewTask(isInitialLoad = false) { if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { this.assignTask(isInitialLoad); } },
         
-        assignTask(isInitialLoad = false) {
+        checkForNewTask() {
+            console.log(`Checking for new task. Active: ${!!this.state.activeTask}, Assigned today: ${this.state.dailyTasksAssigned}/${this.state.tasksPerDay}`);
+            if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) {
+                this.assignTask();
+            }
+        },
+        
+        assignTask() {
             const enabledTasks = this.state.tasks.filter(t => t.enabled);
             if (enabledTasks.length === 0) {
-                if(!isInitialLoad) this.showResult('No Tasks', 'Please enable some tasks in the management menu to continue.');
+                console.log("No enabled tasks. Skipping assignment.");
                 return;
             }
             const randomTask = enabledTasks[Math.floor(Math.random() * enabledTasks.length)];
@@ -176,10 +184,9 @@
             this.state.activeTask = { id: randomTask.id, name: nameString, assignedAt: Date.now(), type: 'task', points: randomTask.points };
             this.state.dailyTasksAssigned++;
             
-            this.playNotificationSound(); // Play sound on new task
+            console.log("New task assigned:", this.state.activeTask);
+            this.playNotificationSound();
             this.saveState(); 
-            
-            if (!isInitialLoad) this.render();
         },
 
         completeTask() { clearInterval(this.timerInterval);const p=this.state.activeTask.points;this.state.points+=p;this.state.activeTask=null;this.saveState();this.showResult('Task Complete!',`You earned ${p} points. Visit the Reward Shop to spend them!`);this.render();},
