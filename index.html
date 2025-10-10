@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+    <!-- Sound Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <script>
         dayjs.extend(dayjs_plugin_relativeTime);
         tailwind.config = {
@@ -32,36 +35,14 @@
         }
     </script>
     <style>
-        body {
-            background-color: #1a1a1a;
-            color: #f5f5f5;
-        }
-        .modal-backdrop {
-            background-color: rgba(0,0,0,0.7);
-        }
-        .task-card {
-            background: linear-gradient(145deg, #2e2e2e, #262626);
-            box-shadow: 8px 8px 16px #1e1e1e, -8px -8px 16px #343434;
-        }
-        .btn {
-            transition: all 0.2s ease-in-out;
-        }
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .tab-active {
-            border-bottom-color: #4f46e5;
-            color: #f5f5f5;
-        }
-        .tab {
-            border-bottom-color: transparent;
-            color: #a3a3a3;
-        }
+        body { background-color: #1a1a1a; color: #f5f5f5; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.7); }
+        .task-card { background: linear-gradient(145deg, #2e2e2e, #262626); box-shadow: 8px 8px 16px #1e1e1e, -8px -8px 16px #343434; }
+        .btn { transition: all 0.2s ease-in-out; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tab-active { border-bottom-color: #4f46e5; color: #f5f5f5; }
+        .tab { border-bottom-color: transparent; color: #a3a3a3; }
     </style>
 </head>
 <body class="antialiased">
@@ -77,16 +58,14 @@
                     <p id="points-display" class="text-2xl font-bold text-brand-accent">0</p>
                 </div>
                 <button id="shop-btn" class="btn bg-brand-secondary p-3 rounded-full hover:bg-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-text" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </button>
             </div>
         </header>
 
         <!-- Main Content Area -->
         <main id="main-content" class="text-center p-8 rounded-2xl task-card min-h-[300px] flex flex-col justify-center items-center">
-            <!-- This will be populated by JavaScript -->
+            <!-- Populated by JS -->
         </main>
 
         <!-- Footer Controls -->
@@ -96,482 +75,155 @@
 
     </div>
 
-    <!-- Management Modal -->
-    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-bold">Manage Your Setup</h2>
-                <button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button>
-            </div>
-            
-            <div class="flex border-b border-gray-700 px-6">
-                <button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6">Tasks</button>
-                <button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6">Forfeits</button>
-                <button data-tab="settings" class="tab text-lg font-semibold py-4">Settings</button>
-            </div>
-
-            <div class="p-6 overflow-y-auto">
-                <div id="tasks-tab" class="tab-content"></div>
-                <div id="forfeits-tab" class="tab-content hidden"></div>
-                <div id="settings-tab" class="tab-content hidden"></div>
-            </div>
+    <!-- Sound Enable Modal -->
+    <div id="sound-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex justify-center items-center p-4">
+         <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-sm text-center p-8">
+            <h2 class="text-2xl font-bold mb-4">Enable Sound</h2>
+            <p class="text-brand-subtle mb-6">Click the button below to enable sound notifications for new tasks.</p>
+            <button id="enable-sound-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">Enable Sound</button>
         </div>
     </div>
     
-    <!-- Reward Shop Modal -->
-    <div id="shop-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-bold">Reward Shop</h2>
-                <button class="close-modal-btn text-gray-400 hover:text-white" data-modal="shop-modal">&times;</button>
-            </div>
-            <div id="shop-content" class="p-6 overflow-y-auto">
-                <!-- Shop items will be rendered here -->
-            </div>
-             <div class="p-4 border-t border-gray-700">
-                <button id="log-toggle-btn" class="w-full btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">View Purchase History</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Generic Result Modal -->
-    <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8">
-            <h2 id="result-title" class="text-2xl font-bold mb-4"></h2>
-            <p id="result-message" class="text-brand-subtle mb-6"></p>
-            <div id="result-details" class="mb-6"></div>
-            <button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button>
-        </div>
-    </div>
-    
-    <!-- Forfeit Feedback Modal -->
-    <div id="feedback-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8">
-            <h2 class="text-2xl font-bold mb-4">Forfeit Feedback</h2>
-            <p class="text-brand-subtle mb-6">How difficult was that forfeit?</p>
-            <div class="flex justify-around">
-                <button data-feedback="hard" class="btn feedback-btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg">Hard</button>
-                <button data-feedback="ok" class="btn feedback-btn bg-brand-warning hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">About Right</button>
-                <button data-feedback="easy" class="btn feedback-btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg">Easy</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Modal (for Tasks/Forfeits) -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h2 id="edit-modal-title" class="text-2xl font-bold mb-6"></h2>
-            <form id="edit-form">
-                <!-- Form fields will be injected here -->
-            </form>
-             <div class="mt-6 flex justify-end space-x-4">
-                <button id="edit-cancel-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
-                <button id="edit-save-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg">Save</button>
-            </div>
-        </div>
-    </div>
+    <!-- Other Modals (Manage, Shop, etc.) -->
+    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Manage Your Setup</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button></div><div class="flex border-b border-gray-700 px-6"><button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6">Tasks</button><button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6">Forfeits</button><button data-tab="settings" class="tab text-lg font-semibold py-4">Settings</button></div><div class="p-6 overflow-y-auto"><div id="tasks-tab" class="tab-content"></div><div id="forfeits-tab" class="tab-content hidden"></div><div id="settings-tab" class="tab-content hidden"></div></div></div></div>
+    <div id="shop-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Reward Shop</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="shop-modal">&times;</button></div><div id="shop-content" class="p-6 overflow-y-auto"></div><div class="p-4 border-t border-gray-700"><button id="log-toggle-btn" class="w-full btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">View Purchase History</button></div></div></div>
+    <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 id="result-title" class="text-2xl font-bold mb-4"></h2><p id="result-message" class="text-brand-subtle mb-6"></p><div id="result-details" class="mb-6"></div><button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button></div></div>
+    <div id="feedback-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 class="text-2xl font-bold mb-4">Forfeit Feedback</h2><p class="text-brand-subtle mb-6">How difficult was that forfeit?</p><div class="flex justify-around"><button data-feedback="hard" class="btn feedback-btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg">Hard</button><button data-feedback="ok" class="btn feedback-btn bg-brand-warning hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">About Right</button><button data-feedback="easy" class="btn feedback-btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg">Easy</button></div></div></div>
+    <div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md p-6"><h2 id="edit-modal-title" class="text-2xl font-bold mb-6"></h2><form id="edit-form"></form><div class="mt-6 flex justify-end space-x-4"><button id="edit-cancel-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button><button id="edit-save-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg">Save</button></div></div></div>
 
 <script type="module">
     const App = {
-        // --- STATE ---
-        state: {},
-        timerInterval: null,
+        state: {}, timerInterval: null,
         
-        // --- DEFAULT DATA ---
         getDefaultState() {
             return {
-                points: 100,
-                tasksPerDay: 1,
-                activeTask: null,
-                lastTaskDate: null,
-                dailyTasksAssigned: 0,
-                rewardsRedeemedToday: 0,
-                lastPriceCheckDate: null,
-                saleIsOn: false,
-                rewardLog: [],
-                tasks: [
-                    { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true },
-                    { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true },
-                    { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true },
-                    { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true },
-                    { id: 't5', name: 'Wall sit', value: 1, unit: 'minute', points: 15, enabled: true },
-                    { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true },
-                    { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true },
-                    { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true },
-                    { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true },
-                ],
-                rewards: [
-                    { id: 'r1', name: 'Eat Candy', points: 50 },
-                    { id: 'r2', name: '30min Me Time', points: 100 },
-                    { id: 'r3', name: 'Watch a Movie', points: 200 },
-                    { id: 'r4', name: 'Smoke a Cigarette', points: 25 },
-                ],
+                points: 100, tasksPerDay: 1, activeTask: null, lastTaskDate: null,
+                dailyTasksAssigned: 0, rewardsRedeemedToday: 0, lastPriceCheckDate: null,
+                saleIsOn: false, rewardLog: [], soundInitialized: false, // New state for sound
+                tasks: [ { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true }, { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true }, { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't5', name: 'Wall sit', value: 1, unit: 'minute', points: 15, enabled: true }, { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true }, { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true }, { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true }, { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true }, ],
+                rewards: [ { id: 'r1', name: 'Eat Candy', points: 50 }, { id: 'r2', name: '30min Me Time', points: 100 }, { id: 'r3', name: 'Watch a Movie', points: 200 }, { id: 'r4', name: 'Smoke a Cigarette', points: 25 }, ],
                 forfeits: {
-                    tasks: [
-                        { id: 'ft1', name: 'Face the corner', enabled: true },
-                        { id: 'ft2', name: 'Face the wall', enabled: true },
-                        { id: 'ft3', name: 'Squat', enabled: true },
-                        { id: 'ft4', name: 'Kneeling', enabled: true },
-                    ],
-                    positions: [
-                        { id: 'fp1', name: 'Hands in air', enabled: true },
-                        { id: 'fp2', name: 'Hands on hair', enabled: true },
-                    ],
-                    duration: 600, // 10 minutes in seconds
+                    tasks: [ { id: 'ft1', name: 'Face the corner', enabled: true }, { id: 'ft2', name: 'Face the wall', enabled: true }, { id: 'ft3', name: 'Squat', enabled: true }, { id: 'ft4', name: 'Kneeling', enabled: true }, ],
+                    positions: [ { id: 'fp1', name: 'Hands in air', enabled: true }, { id: 'fp2', name: 'Hands on hair', enabled: true }, ],
+                    duration: 600,
                 }
             };
         },
 
-        // --- DATA PERSISTENCE ---
-        saveState() {
-            localStorage.setItem('taskmaster_state', JSON.stringify(this.state));
-        },
-        loadState() {
-            const savedState = localStorage.getItem('taskmaster_state');
-            this.state = savedState ? { ...this.getDefaultState(), ...JSON.parse(savedState) } : this.getDefaultState();
-            if (!this.state.rewardLog) this.state.rewardLog = [];
-        },
+        saveState() { localStorage.setItem('taskmaster_state', JSON.stringify(this.state)); },
+        loadState() { const s=localStorage.getItem('taskmaster_state');this.state=s?{...this.getDefaultState(),...JSON.parse(s)}:this.getDefaultState();if(!this.state.rewardLog)this.state.rewardLog=[]; },
 
-        // --- INITIALIZATION ---
         init() {
             this.loadState();
+            this.attachEventListeners();
+            
+            if (!this.state.soundInitialized) {
+                this.showModal('sound-modal');
+            } else {
+                this.startApp();
+            }
+        },
+        
+        startApp() {
             this.checkDateAndReset();
             this.checkAndAdjustPrices();
-            this.attachEventListeners();
+            this.checkForNewTask(true);
             this.render();
-            this.checkForNewTask();
         },
         
         attachEventListeners() {
+            document.getElementById('enable-sound-btn').addEventListener('click', async () => {
+                await Tone.start();
+                this.state.soundInitialized = true;
+                this.saveState();
+                this.hideModal('sound-modal');
+                this.startApp();
+            });
+            // ... (rest of event listeners are unchanged)
             document.getElementById('manage-btn').addEventListener('click', () => this.showModal('manage-modal'));
-            document.getElementById('shop-btn').addEventListener('click', () => {
-                this.renderShopModal(true); // Render shop view first
-                this.showModal('shop-modal');
-            });
-            
-            document.querySelectorAll('.close-modal-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => this.hideModal(e.target.dataset.modal));
-            });
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', (e) => this.switchTab(e.target));
-            });
-
-            document.getElementById('main-content').addEventListener('click', (e) => {
-                if (e.target.id === 'complete-task-btn') this.completeTask();
-                if (e.target.id === 'fail-task-btn') this.failTask();
-                if (e.target.id === 'complete-forfeit-btn') this.showModal('feedback-modal');
-            });
-            
-            document.getElementById('result-ok-btn').addEventListener('click', () => {
-                 this.hideModal('result-modal');
-                 this.checkForNewTask();
-            });
-
-            document.querySelectorAll('.feedback-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => this.handleForfeitFeedback(e.target.dataset.feedback));
-            });
-
+            document.getElementById('shop-btn').addEventListener('click', () => { this.renderShopModal(true); this.showModal('shop-modal'); });
+            document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', e => this.hideModal(e.target.dataset.modal)));
+            document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', e => this.switchTab(e.target)));
+            document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'fail-task-btn') this.failTask(); if (e.target.id === 'complete-forfeit-btn') this.showModal('feedback-modal'); });
+            document.getElementById('result-ok-btn').addEventListener('click', () => { this.hideModal('result-modal'); this.checkForNewTask(); });
+            document.querySelectorAll('.feedback-btn').forEach(btn => btn.addEventListener('click', e => this.handleForfeitFeedback(e.target.dataset.feedback)));
             document.getElementById('edit-cancel-btn').addEventListener('click', () => this.hideModal('edit-modal'));
             document.getElementById('edit-save-btn').addEventListener('click', () => this.handleSave());
-            
-            document.getElementById('shop-modal').addEventListener('click', e => {
-                if (e.target.classList.contains('redeem-reward-btn')) this.redeemReward(e);
-            });
-            
-            document.getElementById('log-toggle-btn').addEventListener('click', e => {
-                const isShowingShop = e.target.textContent.includes('History');
-                this.renderShopModal(!isShowingShop);
-            });
-        },
-
-        // --- CORE LOGIC ---
-        checkDateAndReset() {
-            const today = dayjs().format('YYYY-MM-DD');
-            if (this.state.lastTaskDate !== today) {
-                this.state.lastTaskDate = today;
-                this.state.dailyTasksAssigned = 0;
-                this.saveState();
-            }
+            document.getElementById('shop-modal').addEventListener('click', e => { if (e.target.classList.contains('redeem-reward-btn')) this.redeemReward(e); });
+            document.getElementById('log-toggle-btn').addEventListener('click', e => { const i = e.target.textContent.includes('History'); this.renderShopModal(!i); });
         },
         
-        checkAndAdjustPrices() {
-            const today = dayjs().format('YYYY-MM-DD');
-            if (this.state.lastPriceCheckDate && this.state.lastPriceCheckDate !== today) {
-                if (this.state.rewardsRedeemedToday >= 3) {
-                    this.state.rewards.forEach(r => r.points = Math.round(r.points * 1.05));
-                    this.state.saleIsOn = false;
-                } else if (this.state.rewardsRedeemedToday === 0) {
-                    this.state.rewards.forEach(r => r.points = Math.max(1, Math.round(r.points * 0.95)));
-                    this.state.saleIsOn = true;
-                } else {
-                    this.state.saleIsOn = false;
-                }
-                this.state.rewardsRedeemedToday = 0;
-            }
-            this.state.lastPriceCheckDate = today;
-            this.saveState();
-        },
-
-        checkForNewTask() {
-            if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) {
-                this.assignTask();
+        playNotificationSound() {
+            if (this.state.soundInitialized) {
+                const synth = new Tone.Synth().toDestination();
+                synth.triggerAttackRelease("C5", "8n");
             }
         },
 
-        assignTask() {
+        checkDateAndReset() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastTaskDate!==t){this.state.lastTaskDate=t;this.state.dailyTasksAssigned=0;this.saveState();} },
+        checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){if(this.state.rewardsRedeemedToday>=3){this.state.rewards.forEach(r=>r.points=Math.round(r.points*1.05));this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.rewards.forEach(r=>r.points=Math.max(1,Math.round(r.points*0.95)));this.state.saleIsOn=true;}else{this.state.saleIsOn=false;}this.state.rewardsRedeemedToday=0;}this.state.lastPriceCheckDate=t;this.saveState(); },
+        checkForNewTask(isInitialLoad = false) { if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { this.assignTask(isInitialLoad); } },
+        
+        assignTask(isInitialLoad = false) {
             const enabledTasks = this.state.tasks.filter(t => t.enabled);
             if (enabledTasks.length === 0) {
-                this.showResult('No Tasks', 'Please enable some tasks in the management menu to continue.');
+                if(!isInitialLoad) this.showResult('No Tasks', 'Please enable some tasks in the management menu to continue.');
                 return;
             }
             const randomTask = enabledTasks[Math.floor(Math.random() * enabledTasks.length)];
-            let nameString = '';
-            if (randomTask.unit === 'area') {
-                 nameString = `${randomTask.name}`;
-            } else {
-                 nameString = `${randomTask.value} ${randomTask.unit} ${randomTask.name}`;
-            }
-            this.state.activeTask = {
-                id: randomTask.id, name: nameString,
-                assignedAt: Date.now(), type: 'task', points: randomTask.points
-            };
-            this.state.dailyTasksAssigned++;
-            this.saveState(); this.render();
-        },
-
-        completeTask() {
-            clearInterval(this.timerInterval);
-            const pointsGained = this.state.activeTask.points;
-            this.state.points += pointsGained;
-            this.state.activeTask = null;
-            this.saveState();
-            this.showResult('Task Complete!', `You earned ${pointsGained} points. Visit the Reward Shop to spend them!`);
-            this.render();
-        },
-
-        failTask() {
-            clearInterval(this.timerInterval); 
-            this.state.activeTask = null;
-            this.assignForfeit();
-        },
-
-        assignForfeit() {
-            const enabledForfeitTasks = this.state.forfeits.tasks.filter(t => t.enabled);
-            const enabledForfeitPositions = this.state.forfeits.positions.filter(p => p.enabled);
-            if (enabledForfeitTasks.length === 0 || enabledForfeitPositions.length === 0) {
-                this.showResult('Forfeit Skipped', 'No forfeits are enabled. Lucky you!', '');
-                this.saveState();
-                this.render();
-                return;
-            }
-            const randomTask = enabledForfeitTasks[Math.floor(Math.random() * enabledForfeitTasks.length)];
-            const randomPosition = enabledForfeitPositions[Math.floor(Math.random() * enabledForfeitPositions.length)];
-            this.state.activeTask = {
-                id: `f-${Date.now()}`, name: randomTask.name, position: randomPosition.name,
-                duration: this.state.forfeits.duration, assignedAt: Date.now(), type: 'forfeit'
-            };
-            this.saveState();
-            this.showResult('Task Failed', 'A forfeit has been assigned.');
-            this.render();
-        },
-
-        handleForfeitFeedback(feedback) {
-            const duration = this.state.forfeits.duration;
-            if (feedback === 'easy') { this.state.forfeits.duration = Math.round(duration * 1.10); if (this.state.tasksPerDay < 12) this.state.tasksPerDay++; }
-            else if (feedback === 'ok') { this.state.forfeits.duration = Math.round(duration * 1.05); }
-            else if (feedback === 'hard') { this.state.forfeits.duration = Math.max(60, Math.round(duration * 0.90)); if (this.state.tasksPerDay > 1) this.state.tasksPerDay--; }
-            this.state.activeTask = null; this.hideModal('feedback-modal'); this.saveState();
-            this.showResult('Forfeit Complete', 'Your feedback has been recorded.'); this.render();
-        },
-        
-        redeemReward(e) {
-            const { id } = e.target.dataset;
-            const reward = this.state.rewards.find(r => r.id === id);
+            let nameString = (randomTask.unit === 'area') ? `${randomTask.name}` : `${randomTask.value} ${randomTask.unit} ${randomTask.name}`;
             
-            if (reward && this.state.points >= reward.points) {
-                this.state.points -= reward.points;
-                this.state.rewardsRedeemedToday++;
-                this.state.rewardLog.unshift({
-                    name: reward.name,
-                    points: reward.points,
-                    redeemedAt: Date.now()
-                });
-                this.saveState();
-                this.render(); // Re-render points
-                this.renderShopModal(true); // Re-render shop to update button states
-                this.showResult('Reward Claimed!', `You redeemed "${reward.name}" for ${reward.points} points.`);
-            }
+            this.state.activeTask = { id: randomTask.id, name: nameString, assignedAt: Date.now(), type: 'task', points: randomTask.points };
+            this.state.dailyTasksAssigned++;
+            
+            this.playNotificationSound(); // Play sound on new task
+            this.saveState(); 
+            
+            if (!isInitialLoad) this.render();
         },
+
+        completeTask() { clearInterval(this.timerInterval);const p=this.state.activeTask.points;this.state.points+=p;this.state.activeTask=null;this.saveState();this.showResult('Task Complete!',`You earned ${p} points. Visit the Reward Shop to spend them!`);this.render();},
+        failTask() { clearInterval(this.timerInterval);this.state.activeTask=null;this.assignForfeit();},
+        assignForfeit() { const t=this.state.forfeits.tasks.filter(t=>t.enabled),p=this.state.forfeits.positions.filter(p=>p.enabled);if(t.length===0||p.length===0){this.showResult('Forfeit Skipped','No forfeits are enabled. Lucky you!','');this.saveState();this.render();return;}const r=t[Math.floor(Math.random()*t.length)],o=p[Math.floor(Math.random()*p.length)];this.state.activeTask={id:`f-${Date.now()}`,name:r.name,position:o.name,duration:this.state.forfeits.duration,assignedAt:Date.now(),type:'forfeit'};this.saveState();this.showResult('Task Failed','A forfeit has been assigned.');this.render();},
+        handleForfeitFeedback(f){const d=this.state.forfeits.duration;if(f==='easy'){this.state.forfeits.duration=Math.round(d*1.1);if(this.state.tasksPerDay<12)this.state.tasksPerDay++;}else if(f==='ok'){this.state.forfeits.duration=Math.round(d*1.05);}else if(f==='hard'){this.state.forfeits.duration=Math.max(60,Math.round(d*.9));if(this.state.tasksPerDay>1)this.state.tasksPerDay--;}this.state.activeTask=null;this.hideModal('feedback-modal');this.saveState();this.showResult('Forfeit Complete','Your feedback has been recorded.');this.render();},
+        redeemReward(e){const{id:t}=e.target.dataset,r=this.state.rewards.find(r=>r.id===t);if(r&&this.state.points>=r.points){this.state.points-=r.points;this.state.rewardsRedeemedToday++;this.state.rewardLog.unshift({name:r.name,points:r.points,redeemedAt:Date.now()});this.saveState();this.render();this.renderShopModal(true);this.showResult('Reward Claimed!',`You redeemed "${r.name}" for ${r.points} points.`);}},
         
-        // --- RENDERING ---
-        render() {
-            this.renderMainContent();
-            this.renderManagement();
-            document.getElementById('points-display').textContent = this.state.points;
-        },
+        render() { this.renderMainContent(); this.renderManagement(); document.getElementById('points-display').textContent = this.state.points; },
         
         renderMainContent() {
             const mainContent = document.getElementById('main-content');
             if (this.state.activeTask) {
-                if (this.state.activeTask.type === 'task') { this.renderActiveTask(mainContent); } else { this.renderActiveForfeit(mainContent); }
-            } else { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">All Clear!</h2><p class="text-brand-subtle">Waiting for the next task.</p>`; }
-        },
-        renderActiveTask(container) {
-            const task = this.state.activeTask; const deadline = task.assignedAt + (24 * 60 * 60 * 1000);
-            container.innerHTML = `<p class="text-brand-subtle mb-2">Your Task:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${task.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button><button id="fail-task-btn" class="btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg">Can't Do It</button></div>`;
-            const timerEl = document.getElementById('timer'); clearInterval(this.timerInterval);
-            this.timerInterval = setInterval(() => { const now = Date.now(); const timeLeft = deadline - now;
-                if (timeLeft <= 0) { clearInterval(this.timerInterval); timerEl.textContent = "Time's Up!"; this.failTask(); }
-                else { const h = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((timeLeft % (1000 * 60)) / 1000); timerEl.textContent = `Time left: ${h}h ${m}m ${s}s`; }
-            }, 1000);
-        },
-        renderActiveForfeit(container) {
-            const forfeit = this.state.activeTask; const duration = dayjs.duration(forfeit.duration, 'seconds').format('m [minutes and] s [seconds]');
-            container.innerHTML = `<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${forfeit.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${forfeit.position}</p><p class="text-xl text-brand-warning mb-6">Duration: ${duration}</p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">I have completed my forfeit</button>`;
-        },
-        
-        switchTab(tabElement) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
-            tabElement.classList.add('tab-active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(`${tabElement.dataset.tab}-tab`).classList.remove('hidden');
-            this.renderManagement(); // Re-render content on tab switch
-        },
-
-        renderManagement() {
-            const activeTab = document.querySelector('#manage-modal .tab-active').dataset.tab;
-            if (activeTab === 'tasks') this.renderList('tasks', this.state.tasks, ['name', 'value', 'unit', 'points']);
-            if (activeTab === 'forfeits') this.renderForfeitsTab();
-            if (activeTab === 'settings') this.renderSettingsTab();
-        },
-
-        renderShopModal(showShop) {
-            const container = document.getElementById('shop-content');
-            const toggleBtn = document.getElementById('log-toggle-btn');
-            
-            if (showShop) {
-                const saleBanner = this.state.saleIsOn ? `<div class="bg-green-500/20 border border-green-500 text-green-300 text-center p-3 rounded-lg mb-4">🔥 **REWARD SALE ON!** All prices are 5% off today! 🔥</div>` : '';
-                const itemsHTML = this.state.rewards.map(item => {
-                    const canAfford = this.state.points >= item.points;
-                    return `
-                    <div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2 ${!canAfford ? 'opacity-50' : ''}">
-                        <div>
-                            <p class="font-semibold">${item.name}</p>
-                            <p class="text-sm font-bold ${this.state.saleIsOn ? 'text-green-400' : 'text-brand-accent'}">${item.points} Points</p>
-                        </div>
-                        <button class="btn redeem-reward-btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-1 px-3 rounded-md text-sm" data-id="${item.id}" ${canAfford ? '' : 'disabled'}>Redeem</button>
-                    </div>`;
-                }).join('');
-                container.innerHTML = saleBanner + itemsHTML;
-                toggleBtn.textContent = 'View Purchase History';
-            } else { // Show Log
-                let logHTML = '<h3 class="text-lg font-bold mb-4">Purchase History</h3>';
-                if (this.state.rewardLog.length === 0) {
-                    logHTML += '<p class="text-brand-subtle">You haven\'t purchased any rewards yet.</p>';
-                } else {
-                    logHTML += this.state.rewardLog.map(log => `
-                        <div class="flex justify-between items-center p-2 bg-brand-primary rounded-md mb-2">
-                            <div>
-                                <p class="font-semibold">${log.name}</p>
-                                <p class="text-xs text-brand-subtle">${dayjs(log.redeemedAt).fromNow()}</p>
-                            </div>
-                            <p class="font-bold text-brand-accent">${log.points}</p>
-                        </div>
-                    `).join('');
-                }
-                container.innerHTML = logHTML;
-                toggleBtn.textContent = 'Back to Shop';
-            }
-        },
-
-        renderList(type, items, fields) {
-            const container = document.getElementById(`${type}-tab`);
-            const itemsHTML = items.map(item => `<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="${type}" data-id="${item.id}" ${item.enabled ? 'checked' : ''}></label><div><p class="font-semibold ${item.enabled ? '' : 'line-through text-gray-500'}">${item.name}</p><p class="text-sm text-brand-subtle">${fields.slice(1).map(f => `${f.charAt(0).toUpperCase() + f.slice(1)}: ${item[f]}`).join(', ')}</p></div></div><div><button class="edit-item-btn text-brand-subtle hover:text-white mr-2" data-type="${type}" data-id="${item.id}">Edit</button><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="${type}" data-id="${item.id}">Delete</button></div></div>`).join('');
-            container.innerHTML = `<div class="mb-6">${itemsHTML}</div><button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-4 rounded-lg" data-type="${type}">Add New ${type.slice(0, -1)}</button>`;
-            container.querySelectorAll('.form-checkbox').forEach(box => box.addEventListener('change', (e) => this.toggleEnable(e)));
-            container.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.deleteItem(e)));
-            container.querySelectorAll('.add-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleAddItem(e)));
-            container.querySelectorAll('.edit-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleEditItem(e)));
-        },
-
-        renderForfeitsTab() {
-            const container = document.getElementById('forfeits-tab');
-            const { tasks, positions } = this.state.forfeits;
-            const renderSublist = (subType, list) => list.map(item => `<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="forfeits" data-subtype="${subType}" data-id="${item.id}" ${item.enabled ? 'checked' : ''}></label><p class="font-semibold ${item.enabled ? '' : 'line-through text-gray-500'}">${item.name}</p></div><div><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="forfeits" data-subtype="${subType}" data-id="${item.id}">Delete</button></div></div>`).join('');
-            container.innerHTML = `<div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Tasks</h3>${renderSublist('tasks', tasks)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="tasks">Add New Task</button></div><div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Positions</h3>${renderSublist('positions', positions)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="positions">Add New Position</button></div>`;
-            container.querySelectorAll('.form-checkbox').forEach(box => box.addEventListener('change', (e) => this.toggleEnable(e)));
-            container.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.deleteItem(e)));
-            container.querySelectorAll('.add-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleAddItem(e)));
-        },
-        
-        renderSettingsTab() {
-             const container = document.getElementById('settings-tab');
-             container.innerHTML = `<div class="bg-brand-primary p-4 rounded-lg"><label for="tasks-per-day" class="block text-lg font-semibold mb-2">Tasks Per Day</label><input type="number" id="tasks-per-day" min="1" max="12" value="${this.state.tasksPerDay}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how many tasks you want to be assigned each day (1-12).</p></div><div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="forfeit-duration" class="block text-lg font-semibold mb-2">Base Forfeit Duration (minutes)</label><input type="number" id="forfeit-duration" min="1" value="${this.state.forfeits.duration / 60}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div><div class="mt-6"><button id="save-settings-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button></div>`;
-             document.getElementById('save-settings-btn').addEventListener('click', () => { this.state.tasksPerDay = parseInt(document.getElementById('tasks-per-day').value, 10); this.state.forfeits.duration = parseInt(document.getElementById('forfeit-duration').value, 10) * 60; this.saveState(); this.showResult("Settings Saved", "Your new settings have been applied."); });
-        },
-
-        // --- CRUD & FORM HANDLING ---
-        toggleEnable(e) {
-            const { type, id, subtype } = e.target.dataset; let item;
-            if(type === 'forfeits') { item = this.state.forfeits[subtype].find(i => i.id === id); } else { item = this.state[type].find(i => i.id === id); }
-            if (item) { item.enabled = e.target.checked; this.saveState(); this.render(); }
-        },
-        deleteItem(e) {
-            const { type, id, subtype } = e.target.closest('button').dataset;
-             if (confirm('Are you sure you want to delete this item?')) {
-                if(type === 'forfeits') { this.state.forfeits[subtype] = this.state.forfeits[subtype].filter(i => i.id !== id); }
-                else { this.state[type] = this.state[type].filter(i => i.id !== id); }
-                this.saveState(); this.render();
-            }
-        },
-        handleAddItem(e) {
-            const { type, subtype } = e.target.dataset; this.openEditModal(type, null, subtype);
-        },
-        handleEditItem(e) {
-            const { type, id } = e.target.closest('button').dataset; this.openEditModal(type, id);
-        },
-        openEditModal(type, id, subtype = null) {
-            const isNew = id === null; let item = isNew ? {} : (type === 'forfeits' ? this.state.forfeits[subtype].find(i => i.id === id) : this.state[type].find(i => i.id === id));
-            const form = document.getElementById('edit-form'); let formHTML = ''; let title = `${isNew ? 'Add' : 'Edit'} ${subtype || type.slice(0, -1)}`;
-            const fields = { tasks: { name: 'text', value: 'number', unit: 'text', points: 'number' }, forfeits: { name: 'text' } };
-            const currentFields = fields[type];
-            for (const [key, inputType] of Object.entries(currentFields)) { formHTML += `<div class="mb-4"><label class="block text-brand-subtle text-sm font-bold mb-2" for="${key}">${key.charAt(0).toUpperCase() + key.slice(1)}</label><input class="shadow appearance-none border rounded w-full py-2 px-3 bg-brand-primary border-gray-600 text-white leading-tight focus:outline-none focus:shadow-outline" id="${key}" type="${inputType}" placeholder="${key}" value="${item[key] || ''}"></div>`; }
-            form.innerHTML = formHTML; document.getElementById('edit-modal-title').textContent = title;
-            form.dataset.type = type; form.dataset.id = id;
-            if(subtype) form.dataset.subtype = subtype; else delete form.dataset.subtype;
-            this.showModal('edit-modal');
-        },
-        handleSave() {
-            const form = document.getElementById('edit-form'); const { type, id, subtype } = form.dataset; const isNew = id === 'null';
-            let newItem = isNew ? { id: `${type.charAt(0)}${Date.now()}`, enabled: true } : {};
-            const fields = form.querySelectorAll('input');
-            fields.forEach(field => { newItem[field.id] = field.type === 'number' ? parseInt(field.value, 10) || 0 : field.value; });
-            if (isNew) {
-                if(type === 'forfeits'){ this.state.forfeits[subtype].push(newItem); } else { this.state[type].push(newItem); }
+                if (this.state.activeTask.type === 'task') { this.renderActiveTask(mainContent); } 
+                else { this.renderActiveForfeit(mainContent); }
             } else {
-                let collection = type === 'forfeits' ? this.state.forfeits[subtype] : this.state[type]; const index = collection.findIndex(i => i.id === id);
-                if (index > -1) { collection[index] = { ...collection[index], ...newItem }; }
+                 const enabledTasks = this.state.tasks.filter(t => t.enabled);
+                 if (enabledTasks.length === 0) {
+                     mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-warning mb-2">No Tasks Enabled</h2><p class="text-brand-subtle">Please go to 'Manage' and enable at least one task to begin.</p>`;
+                 } else {
+                     mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">At ease.</h2><p class="text-brand-subtle">Waiting for the next task.</p>`;
+                 }
             }
-            this.saveState(); this.render(); this.hideModal('edit-modal');
         },
+        renderActiveTask(c){const t=this.state.activeTask,d=t.assignedAt+864e5;c.innerHTML=`<p class="text-brand-subtle mb-2">Your Task:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button><button id="fail-task-btn" class="btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg">Can't Do It</button></div>`;const e=document.getElementById('timer');clearInterval(this.timerInterval);this.timerInterval=setInterval(()=>{const n=Date.now(),s=d-n;if(s<=0){clearInterval(this.timerInterval);e.textContent="Time's Up!";this.failTask();}else{const h=Math.floor(s%864e5/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3);e.textContent=`Time left: ${h}h ${m}m ${c}s`;}},1e3);},
+        renderActiveForfeit(c){const f=this.state.activeTask,d=dayjs.duration(f.duration,'seconds').format('m [minutes and] s [seconds]');c.innerHTML=`<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${f.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${f.position}</p><p class="text-xl text-brand-warning mb-6">Duration: ${d}</p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">I have completed my forfeit</button>`;},
+        switchTab(e){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));e.classList.add('tab-active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById(`${e.dataset.tab}-tab`).classList.remove('hidden');this.renderManagement();},
+        renderManagement(){const a=document.querySelector('#manage-modal .tab-active').dataset.tab;if(a==='tasks')this.renderList('tasks',this.state.tasks,['name','value','unit','points']);if(a==='forfeits')this.renderForfeitsTab();if(a==='settings')this.renderSettingsTab();},
+        renderShopModal(s){const c=document.getElementById('shop-content'),t=document.getElementById('log-toggle-btn');if(s){const a=this.state.saleIsOn?`<div class="bg-green-500/20 border border-green-500 text-green-300 text-center p-3 rounded-lg mb-4">🔥 **REWARD SALE ON!** All prices are 5% off today! 🔥</div>`:'';const i=this.state.rewards.map(item=>{const n=this.state.points>=item.points;return` <div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2 ${n?'':'opacity-50'}"> <div> <p class="font-semibold">${item.name}</p> <p class="text-sm font-bold ${this.state.saleIsOn?'text-green-400':'text-brand-accent'}">${item.points} Points</p> </div> <button class="btn redeem-reward-btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-1 px-3 rounded-md text-sm" data-id="${item.id}" ${n?'':'disabled'}>Redeem</button> </div>`}).join('');c.innerHTML=a+i;t.textContent='View Purchase History';}else{let l='<h3 class="text-lg font-bold mb-4">Purchase History</h3>';if(this.state.rewardLog.length===0){l+='<p class="text-brand-subtle">You haven\'t purchased any rewards yet.</p>';}else{l+=this.state.rewardLog.map(log=>` <div class="flex justify-between items-center p-2 bg-brand-primary rounded-md mb-2"> <div> <p class="font-semibold">${log.name}</p> <p class="text-xs text-brand-subtle">${dayjs(log.redeemedAt).fromNow()}</p> </div> <p class="font-bold text-brand-accent">${log.points}</p> </div>`).join('');}c.innerHTML=l;t.textContent='Back to Shop';}},
+        renderList(t,i,f){const c=document.getElementById(`${t}-tab`),h=i.map(item=>`<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="${t}" data-id="${item.id}" ${item.enabled?'checked':''}></label><div><p class="font-semibold ${item.enabled?'':'line-through text-gray-500'}">${item.name}</p><p class="text-sm text-brand-subtle">${f.slice(1).map(k=>`${k.charAt(0).toUpperCase()+k.slice(1)}: ${item[k]}`).join(', ')}</p></div></div><div><button class="edit-item-btn text-brand-subtle hover:text-white mr-2" data-type="${t}" data-id="${item.id}">Edit</button><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="${t}" data-id="${item.id}">Delete</button></div></div>`).join('');c.innerHTML=`<div class="mb-6">${h}</div><button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-4 rounded-lg" data-type="${t}">Add New ${t.slice(0,-1)}</button>`;c.querySelectorAll('.form-checkbox').forEach(b=>b.addEventListener('change',e=>this.toggleEnable(e)));c.querySelectorAll('.delete-item-btn').forEach(b=>b.addEventListener('click',e=>this.deleteItem(e)));c.querySelectorAll('.add-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleAddItem(e)));c.querySelectorAll('.edit-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleEditItem(e)));},
+        renderForfeitsTab(){const c=document.getElementById('forfeits-tab'),{tasks:t,positions:p}=this.state.forfeits,r=(s,l)=>l.map(i=>`<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="forfeits" data-subtype="${s}" data-id="${i.id}" ${i.enabled?'checked':''}></label><p class="font-semibold ${i.enabled?'':'line-through text-gray-500'}">${i.name}</p></div><div><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="forfeits" data-subtype="${s}" data-id="${i.id}">Delete</button></div></div>`).join('');c.innerHTML=`<div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Tasks</h3>${r('tasks',t)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="tasks">Add New Task</button></div><div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Positions</h3>${r('positions',p)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="positions">Add New Position</button></div>`;c.querySelectorAll('.form-checkbox').forEach(b=>b.addEventListener('change',e=>this.toggleEnable(e)));c.querySelectorAll('.delete-item-btn').forEach(b=>b.addEventListener('click',e=>this.deleteItem(e)));c.querySelectorAll('.add-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleAddItem(e)));},
+        renderSettingsTab(){const c=document.getElementById('settings-tab');c.innerHTML=`<div class="bg-brand-primary p-4 rounded-lg"><label for="tasks-per-day" class="block text-lg font-semibold mb-2">Tasks Per Day</label><input type="number" id="tasks-per-day" min="1" max="12" value="${this.state.tasksPerDay}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how many tasks you want to be assigned each day (1-12).</p></div><div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="forfeit-duration" class="block text-lg font-semibold mb-2">Base Forfeit Duration (minutes)</label><input type="number" id="forfeit-duration" min="1" value="${this.state.forfeits.duration/60}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div><div class="mt-6"><button id="save-settings-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button></div>`;document.getElementById('save-settings-btn').addEventListener('click',()=>{this.state.tasksPerDay=parseInt(document.getElementById('tasks-per-day').value,10);this.state.forfeits.duration=parseInt(document.getElementById('forfeit-duration').value,10)*60;this.saveState();this.showResult("Settings Saved","Your new settings have been applied.");});},
+        toggleEnable(e){const{type:t,id:i,subtype:s}=e.target.dataset;let a;if(t==='forfeits'){a=this.state.forfeits[s].find(item=>item.id===i);}else{a=this.state[t].find(item=>item.id===i);}if(a){a.enabled=e.target.checked;this.saveState();this.renderManagement();}},
+        deleteItem(e){const{type:t,id:i,subtype:s}=e.target.closest('button').dataset;if(confirm('Are you sure you want to delete this item?')){if(t==='forfeits'){this.state.forfeits[s]=this.state.forfeits[s].filter(item=>item.id!==i);}else{this.state[t]=this.state[t].filter(item=>item.id!==i);}this.saveState();this.renderManagement();}},
+        handleAddItem(e){const{type:t,subtype:s}=e.target.dataset;this.openEditModal(t,null,s);},
+        handleEditItem(e){const{type:t,id:i}=e.target.closest('button').dataset;this.openEditModal(t,i);},
+        openEditModal(t,i,s=null){const n=i===null;let a=n?{}:t==='forfeits'?this.state.forfeits[s].find(item=>item.id===i):this.state[t].find(item=>item.id===i);const o=document.getElementById('edit-form');let d='';let l=`${n?'Add':'Edit'} ${s||t.slice(0,-1)}`;const f={tasks:{name:'text',value:'number',unit:'text',points:'number'},forfeits:{name:'text'}};const c=f[t];for(const[k,p]of Object.entries(c)){d+=`<div class="mb-4"><label class="block text-brand-subtle text-sm font-bold mb-2" for="${k}">${k.charAt(0).toUpperCase()+k.slice(1)}</label><input class="shadow appearance-none border rounded w-full py-2 px-3 bg-brand-primary border-gray-600 text-white leading-tight focus:outline-none focus:shadow-outline" id="${k}" type="${p}" placeholder="${k}" value="${a[k]||''}"></div>`;}o.innerHTML=d;document.getElementById('edit-modal-title').textContent=l;o.dataset.type=t;o.dataset.id=i;if(s)o.dataset.subtype=s;else delete o.dataset.subtype;this.showModal('edit-modal');},
+        handleSave(){const f=document.getElementById('edit-form'),{type:t,id:i,subtype:s}=f.dataset,n=i==='null';let a=n?{id:`${t.charAt(0)}${Date.now()}`,enabled:true}:{};const d=f.querySelectorAll('input');d.forEach(field=>{a[field.id]=field.type==='number'?parseInt(field.value,10)||0:field.value;});if(n){if(t==='forfeits'){this.state.forfeits[s].push(a);}else{this.state[t].push(a);}}else{let c=t==='forfeits'?this.state.forfeits[s]:this.state[t];const e=c.findIndex(item=>item.id===i);if(e>-1){c[e]={...c[e],...a};}}this.saveState();this.renderManagement();this.hideModal('edit-modal');},
 
-        // --- UTILITY ---
-        showModal(id) { document.getElementById(id).classList.remove('hidden'); },
-        hideModal(id) { document.getElementById(id).classList.add('hidden'); },
-        showResult(title, message, detailsHTML = '') {
-            document.getElementById('result-title').textContent = title;
-            document.getElementById('result-message').textContent = message;
-            document.getElementById('result-details').innerHTML = detailsHTML;
-            this.showModal('result-modal');
-        },
+        showModal(id){document.getElementById(id).classList.remove('hidden');}, hideModal(id){document.getElementById(id).classList.add('hidden');},
+        showResult(t,m,d=''){document.getElementById('result-title').textContent=t;document.getElementById('result-message').textContent=m;document.getElementById('result-details').innerHTML=d;this.showModal('result-modal');},
     };
 
-    // --- App Entry Point ---
-    document.addEventListener('DOMContentLoaded', () => {
-        App.init();
-    });
-
+    document.addEventListener('DOMContentLoaded', () => { App.init(); });
 </script>
 
 </body>
