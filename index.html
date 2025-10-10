@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster: Your Life Gamified</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+    <script>
+        dayjs.extend(dayjs_plugin_relativeTime);
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-primary': '#1a1a1a',
+                        'brand-secondary': '#2c2c2c',
+                        'brand-accent': '#4f46e5',
+                        'brand-accent-hover': '#4338ca',
+                        'brand-text': '#f5f5f5',
+                        'brand-subtle': '#a3a3a3',
+                        'brand-success': '#22c55e',
+                        'brand-warning': '#facc15',
+                        'brand-danger': '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #f5f5f5;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.7);
+        }
+        .task-card {
+            background: linear-gradient(145deg, #2e2e2e, #262626);
+            box-shadow: 8px 8px 16px #1e1e1e, -8px -8px 16px #343434;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .tab-active {
+            border-bottom-color: #4f46e5;
+            color: #f5f5f5;
+        }
+        .tab {
+            border-bottom-color: transparent;
+            color: #a3a3a3;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl font-sans">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
+            <div class="text-right">
+                <p class="text-brand-subtle text-sm">Points</p>
+                <p id="points-display" class="text-2xl font-bold text-brand-accent">0</p>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="text-center p-8 rounded-2xl task-card min-h-[300px] flex flex-col justify-center items-center">
+            <!-- This will be populated by JavaScript -->
+        </main>
+
+        <!-- Footer Controls -->
+        <footer class="mt-8 flex justify-center">
+            <button id="manage-btn" class="btn bg-brand-secondary hover:bg-gray-700 text-brand-text font-bold py-3 px-6 rounded-lg shadow-lg">Manage</button>
+        </footer>
+
+    </div>
+
+    <!-- Management Modal -->
+    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
+        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Manage Your Setup</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            
+            <div class="flex border-b border-gray-700 px-6">
+                <button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6">Tasks</button>
+                <button data-tab="rewards" class="tab text-lg font-semibold py-4 mr-6">Rewards</button>
+                <button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6">Forfeits</button>
+                <button data-tab="settings" class="tab text-lg font-semibold py-4">Settings</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto">
+                <!-- Task Management -->
+                <div id="tasks-tab" class="tab-content"></div>
+                <!-- Reward Management -->
+                <div id="rewards-tab" class="tab-content hidden"></div>
+                <!-- Forfeit Management -->
+                <div id="forfeits-tab" class="tab-content hidden"></div>
+                <!-- Settings -->
+                <div id="settings-tab" class="tab-content hidden"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Generic Result Modal -->
+    <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
+        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8">
+            <h2 id="result-title" class="text-2xl font-bold mb-4"></h2>
+            <p id="result-message" class="text-brand-subtle mb-6"></p>
+            <div id="result-details" class="mb-6"></div>
+            <button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button>
+        </div>
+    </div>
+    
+    <!-- Forfeit Feedback Modal -->
+    <div id="feedback-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
+        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8">
+            <h2 class="text-2xl font-bold mb-4">Forfeit Feedback</h2>
+            <p class="text-brand-subtle mb-6">How difficult was that forfeit?</p>
+            <div class="flex justify-around">
+                <button data-feedback="hard" class="btn feedback-btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg">Hard</button>
+                <button data-feedback="ok" class="btn feedback-btn bg-brand-warning hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">About Right</button>
+                <button data-feedback="easy" class="btn feedback-btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg">Easy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
+        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 id="edit-modal-title" class="text-2xl font-bold mb-6"></h2>
+            <form id="edit-form">
+                <!-- Form fields will be injected here -->
+            </form>
+             <div class="mt-6 flex justify-end space-x-4">
+                <button id="edit-cancel-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="edit-save-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg">Save</button>
+            </div>
+        </div>
+    </div>
+
+
+<script type="module">
+    // Firebase imports will be used here when integrated
+    // For now, we use localStorage for persistence.
+
+    const App = {
+        // --- STATE ---
+        state: {},
+        timerInterval: null,
+        
+        // --- DEFAULT DATA ---
+        getDefaultState() {
+            return {
+                points: 100,
+                tasksPerDay: 1,
+                activeTask: null, // { id, assignedAt, name, type: 'task' | 'forfeit', ... }
+                lastTaskDate: null,
+                dailyTasksAssigned: 0,
+                tasks: [
+                    { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true },
+                    { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true },
+                    { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true },
+                    { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true },
+                    { id: 't5', name: 'Wall sit', value: 60, unit: 'seconds', points: 15, enabled: true },
+                    { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true },
+                    { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true },
+                    { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true },
+                    { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true },
+                    { id: 't10', name: 'Clean Hallway', value: 1, unit: 'area', points: 20, enabled: true },
+                ],
+                rewards: [
+                    { id: 'r1', name: 'Eat Candy', points: 50, enabled: true },
+                    { id: 'r2', name: '30min Me Time', points: 100, enabled: true },
+                    { id: 'r3', name: 'Watch a Movie', points: 200, enabled: true },
+                    { id: 'r4', name: 'Smoke a Cigarette', points: 25, enabled: true },
+                ],
+                forfeits: {
+                    tasks: [
+                        { id: 'ft1', name: 'Face the corner', enabled: true },
+                        { id: 'ft2', name: 'Face the wall', enabled: true },
+                        { id: 'ft3', name: 'Squat', enabled: true },
+                        { id: 'ft4', name: 'Kneeling', enabled: true },
+                    ],
+                    positions: [
+                        { id: 'fp1', name: 'Hands in air', enabled: true },
+                        { id: 'fp2', name: 'Hands on hair', enabled: true },
+                        { id: 'fp3', name: 'Hands behind back', enabled: true },
+                    ],
+                    duration: 600, // 10 minutes in seconds
+                }
+            };
+        },
+
+        // --- DATA PERSISTENCE ---
+        saveState() {
+            localStorage.setItem('taskmaster_state', JSON.stringify(this.state));
+        },
+        loadState() {
+            const savedState = localStorage.getItem('taskmaster_state');
+            if (savedState) {
+                this.state = JSON.parse(savedState);
+            } else {
+                this.state = this.getDefaultState();
+            }
+        },
+
+        // --- INITIALIZATION ---
+        init() {
+            this.loadState();
+            this.attachEventListeners();
+            this.render();
+            this.checkDateAndReset();
+            this.checkForNewTask();
+        },
+        
+        attachEventListeners() {
+            document.getElementById('manage-btn').addEventListener('click', () => this.showModal('manage-modal'));
+            document.getElementById('close-modal-btn').addEventListener('click', () => this.hideModal('manage-modal'));
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
+                    e.target.classList.add('tab-active');
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(`${e.target.dataset.tab}-tab`).classList.remove('hidden');
+                });
+            });
+
+            document.getElementById('main-content').addEventListener('click', (e) => {
+                if (e.target.id === 'complete-task-btn') this.completeTask();
+                if (e.target.id === 'fail-task-btn') this.failTask();
+                if (e.target.id === 'complete-forfeit-btn') this.showModal('feedback-modal');
+            });
+            
+            document.getElementById('result-ok-btn').addEventListener('click', () => {
+                 this.hideModal('result-modal');
+                 this.checkForNewTask();
+            });
+
+            document.querySelectorAll('.feedback-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => this.handleForfeitFeedback(e.target.dataset.feedback));
+            });
+
+            document.getElementById('edit-cancel-btn').addEventListener('click', () => this.hideModal('edit-modal'));
+            document.getElementById('edit-save-btn').addEventListener('click', () => this.handleSave());
+        },
+
+        // --- CORE LOGIC ---
+        checkDateAndReset() {
+            const today = dayjs().format('YYYY-MM-DD');
+            if (this.state.lastTaskDate !== today) {
+                this.state.lastTaskDate = today;
+                this.state.dailyTasksAssigned = 0;
+                this.saveState();
+            }
+        },
+
+        checkForNewTask() {
+            if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) {
+                this.assignTask();
+            }
+        },
+
+        assignTask() {
+            const enabledTasks = this.state.tasks.filter(t => t.enabled);
+            if (enabledTasks.length === 0) {
+                this.showResult('No Tasks', 'Please enable some tasks in the management menu to continue.');
+                return;
+            }
+            
+            const randomTask = enabledTasks[Math.floor(Math.random() * enabledTasks.length)];
+            
+            this.state.activeTask = {
+                id: randomTask.id,
+                name: `${randomTask.value} ${randomTask.unit === 'area' ? '' : randomTask.unit} ${randomTask.name}`,
+                assignedAt: Date.now(),
+                type: 'task',
+                points: randomTask.points
+            };
+            
+            this.state.dailyTasksAssigned++;
+            this.saveState();
+            this.render();
+        },
+
+        completeTask() {
+            clearInterval(this.timerInterval);
+            const pointsGained = this.state.activeTask.points;
+            this.state.points += pointsGained;
+            this.state.activeTask = null;
+
+            const enabledRewards = this.state.rewards.filter(r => r.enabled);
+            let rewardMessage = '';
+            
+            if (enabledRewards.length > 0) {
+                const affordableRewards = enabledRewards.filter(r => r.points <= this.state.points);
+                if (affordableRewards.length > 0) {
+                    const randomReward = affordableRewards[Math.floor(Math.random() * affordableRewards.length)];
+                    this.state.points -= randomReward.points;
+                    rewardMessage = `<p class="mt-4">You claimed a reward: <span class="font-bold text-brand-accent">${randomReward.name}</span> for ${randomReward.points} points.</p>`;
+                } else {
+                    rewardMessage = `<p class="mt-4">You don't have enough points for any rewards yet. Keep it up!</p>`;
+                }
+            }
+            
+            this.saveState();
+            this.showResult(
+                'Task Complete!', 
+                `You earned ${pointsGained} points.`, 
+                rewardMessage
+            );
+            this.render();
+        },
+
+        failTask() {
+            clearInterval(this.timerInterval);
+            this.state.activeTask = null;
+            this.assignForfeit();
+            this.saveState();
+            this.render();
+        },
+
+        assignForfeit() {
+            const enabledForfeitTasks = this.state.forfeits.tasks.filter(t => t.enabled);
+            const enabledForfeitPositions = this.state.forfeits.positions.filter(p => p.enabled);
+
+            if (enabledForfeitTasks.length === 0 || enabledForfeitPositions.length === 0) {
+                this.showResult('Forfeit Skipped', 'No forfeits are enabled. Lucky you!');
+                return;
+            }
+
+            const randomTask = enabledForfeitTasks[Math.floor(Math.random() * enabledForfeitTasks.length)];
+            const randomPosition = enabledForfeitPositions[Math.floor(Math.random() * enabledForfeitPositions.length)];
+
+            this.state.activeTask = {
+                id: `f-${Date.now()}`,
+                name: randomTask.name,
+                position: randomPosition.name,
+                duration: this.state.forfeits.duration,
+                assignedAt: Date.now(),
+                type: 'forfeit'
+            };
+            this.saveState();
+            this.showResult('Task Failed', 'A forfeit has been assigned.');
+            this.render();
+        },
+
+        handleForfeitFeedback(feedback) {
+            const duration = this.state.forfeits.duration;
+            if (feedback === 'easy') {
+                this.state.forfeits.duration = Math.round(duration * 1.10);
+                 if (this.state.tasksPerDay < 12) this.state.tasksPerDay++;
+            } else if (feedback === 'ok') {
+                this.state.forfeits.duration = Math.round(duration * 1.05);
+            } else if (feedback === 'hard') {
+                this.state.forfeits.duration = Math.round(duration * 0.90);
+                if (this.state.tasksPerDay > 1) this.state.tasksPerDay--;
+            }
+            
+            this.state.activeTask = null;
+            this.hideModal('feedback-modal');
+            this.saveState();
+            this.showResult('Forfeit Complete', 'Your feedback has been recorded.');
+            this.render();
+        },
+        
+        // --- RENDERING ---
+        render() {
+            this.renderMainContent();
+            this.renderManagement();
+            document.getElementById('points-display').textContent = this.state.points;
+        },
+        
+        renderMainContent() {
+            const mainContent = document.getElementById('main-content');
+            if (this.state.activeTask) {
+                if (this.state.activeTask.type === 'task') {
+                    this.renderActiveTask(mainContent);
+                } else {
+                    this.renderActiveForfeit(mainContent);
+                }
+            } else {
+                 mainContent.innerHTML = `
+                    <h2 class="text-2xl font-bold text-brand-text mb-2">All Clear!</h2>
+                    <p class="text-brand-subtle">Waiting for the next task.</p>
+                `;
+            }
+        },
+
+        renderActiveTask(container) {
+            const task = this.state.activeTask;
+            const deadline = task.assignedAt + (24 * 60 * 60 * 1000);
+            
+            container.innerHTML = `
+                <p class="text-brand-subtle mb-2">Your Task:</p>
+                <h2 class="text-3xl font-bold text-brand-text mb-4">${task.name}</h2>
+                <div class="text-lg text-brand-warning mb-6" id="timer"></div>
+                <div class="flex space-x-4">
+                    <button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button>
+                    <button id="fail-task-btn" class="btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg">Can't Do It</button>
+                </div>
+            `;
+
+            const timerEl = document.getElementById('timer');
+            clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(() => {
+                const now = Date.now();
+                const timeLeft = deadline - now;
+                if (timeLeft <= 0) {
+                    clearInterval(this.timerInterval);
+                    timerEl.textContent = "Time's Up!";
+                    this.failTask();
+                } else {
+                    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    timerEl.textContent = `Time left: ${hours}h ${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+        },
+
+        renderActiveForfeit(container) {
+            const forfeit = this.state.activeTask;
+            const duration = dayjs.duration(forfeit.duration, 'seconds').format('m [minutes and] s [seconds]');
+            container.innerHTML = `
+                <p class="text-brand-subtle mb-2">Your Forfeit:</p>
+                <h2 class="text-3xl font-bold text-brand-danger mb-2">${forfeit.name}</h2>
+                <p class="text-xl text-brand-subtle mb-2">Position: ${forfeit.position}</p>
+                <p class="text-xl text-brand-warning mb-6">Duration: ${duration}</p>
+                <button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">I have completed my forfeit</button>
+            `;
+        },
+
+        renderManagement() {
+            this.renderList('tasks', this.state.tasks, ['name', 'value', 'unit', 'points']);
+            this.renderList('rewards', this.state.rewards, ['name', 'points']);
+            this.renderForfeitsTab();
+            this.renderSettingsTab();
+        },
+
+        renderList(type, items, fields) {
+            const container = document.getElementById(`${type}-tab`);
+            const itemsHTML = items.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2">
+                    <div class="flex items-center">
+                        <label class="flex items-center cursor-pointer mr-4">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="${type}" data-id="${item.id}" ${item.enabled ? 'checked' : ''}>
+                        </label>
+                        <div>
+                            <p class="font-semibold">${item.name}</p>
+                            <p class="text-sm text-brand-subtle">${fields.slice(1).map(f => `${f.charAt(0).toUpperCase() + f.slice(1)}: ${item[f]}`).join(', ')}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="edit-item-btn text-brand-subtle hover:text-white mr-2" data-type="${type}" data-id="${item.id}">Edit</button>
+                        <button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="${type}" data-id="${item.id}">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="mb-6">${itemsHTML}</div>
+                <button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-4 rounded-lg" data-type="${type}">Add New ${type.slice(0, -1)}</button>
+            `;
+            
+            // Attach event listeners for this specific list
+            container.querySelectorAll('.form-checkbox').forEach(box => box.addEventListener('change', (e) => this.toggleEnable(e)));
+            container.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.deleteItem(e)));
+            container.querySelectorAll('.add-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleAddItem(e)));
+            container.querySelectorAll('.edit-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleEditItem(e)));
+        },
+
+        renderForfeitsTab() {
+            const container = document.getElementById('forfeits-tab');
+            const tasks = this.state.forfeits.tasks;
+            const positions = this.state.forfeits.positions;
+            
+            const renderSublist = (subType, list) => list.map(item => `
+                 <div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2">
+                    <div class="flex items-center">
+                         <label class="flex items-center cursor-pointer mr-4">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="forfeits" data-subtype="${subType}" data-id="${item.id}" ${item.enabled ? 'checked' : ''}>
+                        </label>
+                        <p class="font-semibold">${item.name}</p>
+                    </div>
+                     <div>
+                        <button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="forfeits" data-subtype="${subType}" data-id="${item.id}">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Forfeit Tasks</h3>
+                    ${renderSublist('tasks', tasks)}
+                    <button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="tasks">Add New Task</button>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Forfeit Positions</h3>
+                    ${renderSublist('positions', positions)}
+                    <button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="positions">Add New Position</button>
+                </div>
+            `;
+            container.querySelectorAll('.form-checkbox').forEach(box => box.addEventListener('change', (e) => this.toggleEnable(e)));
+            container.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.deleteItem(e)));
+            container.querySelectorAll('.add-item-btn').forEach(btn => btn.addEventListener('click', (e) => this.handleAddItem(e)));
+        },
+        
+        renderSettingsTab() {
+             const container = document.getElementById('settings-tab');
+             container.innerHTML = `
+                <div class="bg-brand-primary p-4 rounded-lg">
+                    <label for="tasks-per-day" class="block text-lg font-semibold mb-2">Tasks Per Day</label>
+                    <input type="number" id="tasks-per-day" min="1" max="12" value="${this.state.tasksPerDay}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600">
+                    <p class="text-sm text-brand-subtle mt-2">Set how many tasks you want to be assigned each day (1-12).</p>
+                </div>
+                <div class="bg-brand-primary p-4 rounded-lg mt-4">
+                    <label for="forfeit-duration" class="block text-lg font-semibold mb-2">Base Forfeit Duration (minutes)</label>
+                    <input type="number" id="forfeit-duration" min="1" value="${this.state.forfeits.duration / 60}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600">
+                </div>
+                <div class="mt-6">
+                     <button id="save-settings-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button>
+                </div>
+             `;
+             document.getElementById('save-settings-btn').addEventListener('click', () => {
+                this.state.tasksPerDay = parseInt(document.getElementById('tasks-per-day').value, 10);
+                this.state.forfeits.duration = parseInt(document.getElementById('forfeit-duration').value, 10) * 60;
+                this.saveState();
+                this.showResult("Settings Saved", "Your new settings have been applied.");
+             });
+        },
+
+
+        // --- CRUD & FORM HANDLING ---
+        toggleEnable(e) {
+            const { type, id, subtype } = e.target.dataset;
+            let item;
+            if(type === 'forfeits') {
+                item = this.state.forfeits[subtype].find(i => i.id === id);
+            } else {
+                item = this.state[type].find(i => i.id === id);
+            }
+            if (item) {
+                item.enabled = e.target.checked;
+                this.saveState();
+            }
+        },
+
+        deleteItem(e) {
+            const { type, id, subtype } = e.target.closest('button').dataset;
+             if (confirm('Are you sure you want to delete this item?')) {
+                if(type === 'forfeits') {
+                    this.state.forfeits[subtype] = this.state.forfeits[subtype].filter(i => i.id !== id);
+                } else {
+                    this.state[type] = this.state[type].filter(i => i.id !== id);
+                }
+                this.saveState();
+                this.render();
+            }
+        },
+        
+        handleAddItem(e) {
+            const { type, subtype } = e.target.dataset;
+            this.openEditModal(type, null, subtype);
+        },
+
+        handleEditItem(e) {
+            const { type, id, subtype } = e.target.dataset;
+            this.openEditModal(type, id, subtype);
+        },
+
+        openEditModal(type, id, subtype = null) {
+            const isNew = id === null;
+            let item = isNew ? {} : (type === 'forfeits' ? this.state.forfeits[subtype].find(i => i.id === id) : this.state[type].find(i => i.id === id));
+            
+            const form = document.getElementById('edit-form');
+            let formHTML = '';
+            let title = `${isNew ? 'Add' : 'Edit'} ${subtype || type.slice(0, -1)}`;
+
+            const fields = {
+                tasks: { name: 'text', value: 'number', unit: 'text', points: 'number' },
+                rewards: { name: 'text', points: 'number' },
+                forfeits: { name: 'text' }
+            };
+            
+            const currentFields = type === 'forfeits' ? fields.forfeits : fields[type];
+
+            for (const [key, inputType] of Object.entries(currentFields)) {
+                formHTML += `
+                    <div class="mb-4">
+                        <label class="block text-brand-subtle text-sm font-bold mb-2" for="${key}">${key.charAt(0).toUpperCase() + key.slice(1)}</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 bg-brand-primary border-gray-600 text-white leading-tight focus:outline-none focus:shadow-outline" id="${key}" type="${inputType}" placeholder="${key}" value="${item[key] || ''}">
+                    </div>
+                `;
+            }
+            
+            form.innerHTML = formHTML;
+            document.getElementById('edit-modal-title').textContent = title;
+            form.dataset.type = type;
+            form.dataset.id = id;
+            if(subtype) form.dataset.subtype = subtype;
+            else delete form.dataset.subtype;
+
+            this.showModal('edit-modal');
+        },
+        
+        handleSave() {
+            const form = document.getElementById('edit-form');
+            const { type, id, subtype } = form.dataset;
+            const isNew = id === 'null';
+
+            let newItem = isNew ? { id: `${type.charAt(0)}${Date.now()}`, enabled: true } : {};
+            
+            const fields = form.querySelectorAll('input');
+            fields.forEach(field => {
+                newItem[field.id] = field.type === 'number' ? parseInt(field.value, 10) : field.value;
+            });
+            
+            if (isNew) {
+                if(type === 'forfeits'){
+                    this.state.forfeits[subtype].push(newItem);
+                } else {
+                    this.state[type].push(newItem);
+                }
+            } else {
+                let collection = type === 'forfeits' ? this.state.forfeits[subtype] : this.state[type];
+                const index = collection.findIndex(i => i.id === id);
+                if (index > -1) {
+                    collection[index] = { ...collection[index], ...newItem };
+                }
+            }
+
+            this.saveState();
+            this.render();
+            this.hideModal('edit-modal');
+        },
+
+        // --- UTILITY ---
+        showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        },
+        hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        },
+        showResult(title, message, detailsHTML = '') {
+            document.getElementById('result-title').textContent = title;
+            document.getElementById('result-message').textContent = message;
+            document.getElementById('result-details').innerHTML = detailsHTML;
+            this.showModal('result-modal');
+        },
+    };
+
+    // --- App Entry Point ---
+    document.addEventListener('DOMContentLoaded', () => {
+        App.init();
+    });
+
+</script>
+
+</body>
+</html>
+
