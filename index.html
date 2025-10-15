@@ -98,7 +98,17 @@
                 dailyTasksAssigned: 0, rewardsRedeemedToday: 0, lastPriceCheckDate: null,
                 saleIsOn: false, rewardLog: [], soundInitialized: false,
                 taskDurationHours: 2, compliance: 100,
-                tasks: [ { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true }, { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true }, { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true }, { id: 't5', name: 'Wall sit', value: 1, unit: 'minute', points: 15, enabled: true }, { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true }, { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true }, { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true }, { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true }, ],
+                tasks: [
+                    { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't3', name: 'Sit ups', value: 20, unit: 'reps', points: 10, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't4', name: 'Squats', value: 20, unit: 'reps', points: 10, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't5', name: 'Wall sit', value: 1, unit: 'minute', points: 15, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't6', name: 'Hang from bar', value: 10, unit: 'seconds', points: 15, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't7', name: 'Clean Living Room', value: 1, unit: 'area', points: 30, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't8', name: 'Clean Kitchen', value: 1, unit: 'area', points: 40, enabled: true, consecutiveSuccesses: 0 },
+                    { id: 't9', name: 'Clean Bathroom', value: 1, unit: 'area', points: 35, enabled: true, consecutiveSuccesses: 0 },
+                ],
                 rewards: [ { id: 'r1', name: 'Eat Candy', points: 50 }, { id: 'r2', name: '30min Me Time', points: 100 }, { id: 'r3', name: 'Watch a Movie', points: 200 }, { id: 'r4', name: 'Smoke a Cigarette', points: 25 }, ],
                 forfeits: {
                     tasks: [ { id: 'ft1', name: 'Face the corner', enabled: true }, { id: 'ft2', name: 'Face the wall', enabled: true }, { id: 'ft3', name: 'Squat', enabled: true }, { id: 'ft4', name: 'Kneeling', enabled: true }, ],
@@ -148,12 +158,25 @@
 
         completeTask() {
             clearInterval(this.timerInterval);
-            const p = this.state.activeTask.points;
-            this.state.points += p;
+            const task = this.state.activeTask;
+            const originalTask = this.state.tasks.find(t => t.id === task.id);
+            let levelUpMessage = '';
+
+            if(originalTask) {
+                originalTask.consecutiveSuccesses = (originalTask.consecutiveSuccesses || 0) + 1;
+                if(originalTask.consecutiveSuccesses >= 3 && originalTask.unit !== 'area') {
+                    const oldValue = originalTask.value;
+                    originalTask.value = Math.ceil(oldValue * 1.1);
+                    originalTask.consecutiveSuccesses = 0;
+                    levelUpMessage = `<p class="text-brand-success mt-2">✨ ${originalTask.name} leveled up! New goal: ${originalTask.value} ${originalTask.unit}.</p>`;
+                }
+            }
+
+            this.state.points += task.points;
             this.state.compliance = Math.min(100, this.state.compliance + 10);
             this.state.activeTask = null;
             this.saveState();
-            this.showResult('Task Complete!', `You earned ${p} points. Compliance is now ${this.state.compliance}%.`);
+            this.showResult('Task Complete!', `You earned ${task.points} points. Compliance is now ${this.state.compliance}%.`, levelUpMessage);
             this.render();
         },
         
@@ -162,29 +185,43 @@
             this.isProcessingFailure = true;
 
             clearInterval(this.timerInterval);
+            const failedTask = this.state.activeTask;
+            let levelDownMessage = '';
             
-            const compliance = Math.max(0, this.state.compliance - 10);
+            if(failedTask) {
+                 const originalTask = this.state.tasks.find(t => t.id === failedTask.id);
+                 if(originalTask) {
+                    originalTask.consecutiveSuccesses = 0;
+                     if (originalTask.unit !== 'area') {
+                         const oldValue = originalTask.value;
+                         originalTask.value = Math.max(1, Math.floor(oldValue * 0.9));
+                         levelDownMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`;
+                     }
+                 }
+            }
+
+            this.state.compliance = Math.max(0, this.state.compliance - 10);
+            this.assignForfeit(levelDownMessage);
+            
+            this.isProcessingFailure = false;
+        },
+
+        assignForfeit(details) {
             const newForfeit = this.calculateForfeit();
             
             this.state.activeTask = newForfeit;
-            this.state.compliance = compliance;
-            
             this.saveState();
             this.render();
-            
-            if (newForfeit) { this.showResult("Time's Up!", `A forfeit has been assigned. Compliance is now ${this.state.compliance}%.`); } 
-            else { this.showResult('Forfeit Skipped', `Task failed, but no forfeits are enabled. Compliance is now ${this.state.compliance}%.`); }
 
-            this.isProcessingFailure = false;
+            if (newForfeit) { this.showResult("Time's Up!", `A forfeit has been assigned. Compliance is now ${this.state.compliance}%.`, details); } 
+            else { this.showResult('Forfeit Skipped', `Task failed, but no forfeits are enabled. Compliance is now ${this.state.compliance}%.`, details); }
         },
 
         calculateForfeit() {
             const enabledForfeitTasks = this.state.forfeits.tasks.filter(t => t.enabled);
             const enabledForfeitPositions = this.state.forfeits.positions.filter(p => p.enabled);
 
-            if (enabledForfeitTasks.length === 0 || enabledForfeitPositions.length === 0) {
-                return null;
-            }
+            if (enabledForfeitTasks.length === 0 || enabledForfeitPositions.length === 0) { return null; }
 
             const randomTask = enabledForfeitTasks[Math.floor(Math.random() * enabledForfeitTasks.length)];
             const randomPosition = enabledForfeitPositions[Math.floor(Math.random() * enabledForfeitPositions.length)];
@@ -223,7 +260,7 @@
         handleAddItem(e){const{type:t,subtype:s}=e.target.dataset;this.openEditModal(t,null,s);},
         handleEditItem(e){const{type:t,id:i}=e.target.closest('button').dataset;this.openEditModal(t,i);},
         openEditModal(t,i,s=null){const n=i===null;let a=n?{}:t==='forfeits'?this.state.forfeits[s].find(item=>item.id===i):this.state[t].find(item=>item.id===i);const o=document.getElementById('edit-form');let d='';let l=`${n?'Add':'Edit'} ${s||t.slice(0,-1)}`;const f={tasks:{name:'text',value:'number',unit:'text',points:'number'},forfeits:{name:'text'}};const c=f[t];for(const[k,p]of Object.entries(c)){d+=`<div class="mb-4"><label class="block text-brand-subtle text-sm font-bold mb-2" for="${k}">${k.charAt(0).toUpperCase()+k.slice(1)}</label><input class="shadow appearance-none border rounded w-full py-2 px-3 bg-brand-primary border-gray-600 text-white leading-tight focus:outline-none focus:shadow-outline" id="${k}" type="${p}" placeholder="${k}" value="${a[k]||''}"></div>`;}o.innerHTML=d;document.getElementById('edit-modal-title').textContent=l;o.dataset.type=t;o.dataset.id=i;if(s)o.dataset.subtype=s;else delete o.dataset.subtype;this.showModal('edit-modal');},
-        handleSave(){const f=document.getElementById('edit-form'),{type:t,id:i,subtype:s}=f.dataset,n=i==='null';let a=n?{id:`${t.charAt(0)}${Date.now()}`,enabled:true}:{};const d=f.querySelectorAll('input');d.forEach(field=>{a[field.id]=field.type==='number'?parseInt(field.value,10)||0:field.value;});if(n){if(t==='forfeits'){this.state.forfeits[s].push(a);}else{this.state[t].push(a);}}else{let c=t==='forfeits'?this.state.forfeits[s]:this.state[t];const e=c.findIndex(item=>item.id===i);if(e>-1){c[e]={...c[e],...a};}}this.saveState();this.renderManagement();this.hideModal('edit-modal');},
+        handleSave(){const f=document.getElementById('edit-form'),{type:t,id:i,subtype:s}=f.dataset,n=i==='null';let a=n?{id:`${t.charAt(0)}${Date.now()}`,enabled:true, consecutiveSuccesses: 0}:{};const d=f.querySelectorAll('input');d.forEach(field=>{a[field.id]=field.type==='number'?parseInt(field.value,10)||0:field.value;});if(n){if(t==='forfeits'){this.state.forfeits[s].push(a);}else{this.state[t].push(a);}}else{let c=t==='forfeits'?this.state.forfeits[s]:this.state[t];const e=c.findIndex(item=>item.id===i);if(e>-1){c[e]={...c[e],...a};}}this.saveState();this.renderManagement();this.hideModal('edit-modal');},
 
         showModal(id){document.getElementById(id).classList.remove('hidden');}, hideModal(id){document.getElementById(id).classList.add('hidden');},
         showResult(t,m,d=''){document.getElementById('result-title').textContent=t;document.getElementById('result-message').textContent=m;document.getElementById('result-details').innerHTML=d;this.showModal('result-modal');},
