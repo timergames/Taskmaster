@@ -8,12 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script> <!-- Needed for time parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/duration.js"></script> <!-- Needed for duration formatting -->
     <!-- Sound Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <script>
         dayjs.extend(dayjs_plugin_relativeTime);
-        dayjs.extend(dayjs_plugin_customParseFormat); // Enable time parsing
+        dayjs.extend(dayjs_plugin_customParseFormat);
+        dayjs.extend(dayjs_plugin_duration); // Enable duration formatting
         tailwind.config = {
             theme: {
                 extend: {
@@ -82,28 +84,7 @@
 
     <!-- Modals -->
     <div id="sound-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-sm text-center p-8"><h2 class="text-2xl font-bold mb-4">Enable Sound</h2><p class="text-brand-subtle mb-6">Click the button below to enable sound notifications for new tasks.</p><button id="enable-sound-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">Enable Sound</button></div></div>
-    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4">
-        <div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-bold">Manage Your Setup</h2>
-                <button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button>
-            </div>
-            <div class="flex border-b border-gray-700 px-6 overflow-x-auto">
-                <button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6 flex-shrink-0">Tasks</button>
-                <button data-tab="rewards" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Rewards</button>
-                <button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Forfeits</button>
-                <button data-tab="schedule" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Schedule</button> <!-- New Tab -->
-                <button data-tab="settings" class="tab text-lg font-semibold py-4 flex-shrink-0">Settings</button>
-            </div>
-            <div class="p-6 overflow-y-auto">
-                <div id="tasks-tab" class="tab-content"></div>
-                <div id="rewards-tab" class="tab-content hidden"></div>
-                <div id="forfeits-tab" class="tab-content hidden"></div>
-                <div id="schedule-tab" class="tab-content hidden"></div> <!-- New Content Area -->
-                <div id="settings-tab" class="tab-content hidden"></div>
-            </div>
-        </div>
-    </div>
+    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Manage Your Setup</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button></div><div class="flex border-b border-gray-700 px-6 overflow-x-auto"><button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6 flex-shrink-0">Tasks</button><button data-tab="rewards" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Rewards</button><button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Forfeits</button><button data-tab="schedule" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Schedule</button><button data-tab="settings" class="tab text-lg font-semibold py-4 flex-shrink-0">Settings</button></div><div class="p-6 overflow-y-auto"><div id="tasks-tab" class="tab-content"></div><div id="rewards-tab" class="tab-content hidden"></div><div id="forfeits-tab" class="tab-content hidden"></div><div id="schedule-tab" class="tab-content hidden"></div><div id="settings-tab" class="tab-content hidden"></div></div></div></div>
     <div id="shop-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Reward Shop</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="shop-modal">&times;</button></div><div id="shop-content" class="p-6 overflow-y-auto"></div><div class="p-4 border-t border-gray-700"><button id="log-toggle-btn" class="w-full btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">View Purchase History</button></div></div></div>
     <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 id="result-title" class="text-2xl font-bold mb-4"></h2><p id="result-message" class="text-brand-subtle mb-6"></p><div id="result-details" class="mb-6"></div><button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button></div></div>
     <div id="feedback-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 class="text-2xl font-bold mb-4">Forfeit Feedback</h2><p class="text-brand-subtle mb-6">How difficult was that forfeit?</p><div class="flex justify-around"><button data-feedback="hard" class="btn feedback-btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg">Hard</button><button data-feedback="ok" class="btn feedback-btn bg-brand-warning hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">About Right</button><button data-feedback="easy" class="btn feedback-btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg">Easy</button></div></div></div>
@@ -121,27 +102,13 @@
                 taskDurationHours: 2, compliance: 100, compliancePenalty: 20,
                 skipPasses: 0, totalTasksCompleted: 0,
                 currentStreak: 0, lastStreakDate: null,
-                schedule: { // Default schedule: 9 AM to 5 PM Mon-Fri
-                    0: { start: '00:00', end: '00:00' }, // Sunday
-                    1: { start: '09:00', end: '17:00' }, // Monday
-                    2: { start: '09:00', end: '17:00' }, // Tuesday
-                    3: { start: '09:00', end: '17:00' }, // Wednesday
-                    4: { start: '09:00', end: '17:00' }, // Thursday
-                    5: { start: '09:00', end: '17:00' }, // Friday
-                    6: { start: '00:00', end: '00:00' }, // Saturday
-                },
-                tasks: [
-                    { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true, consecutiveSuccesses: 0, scheduledDay: 'any' },
-                    { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true, consecutiveSuccesses: 0, scheduledDay: 'any' },
-                ],
-                rewards: [ 
-                    { id: 'r1', name: 'Eat Candy', points: 50, enabled: true }, 
-                    { id: 'r2', name: '30min Me Time', points: 100, enabled: true }, 
-                ],
+                schedule: { 0: { start: '00:00', end: '00:00' }, 1: { start: '09:00', end: '17:00' }, 2: { start: '09:00', end: '17:00' }, 3: { start: '09:00', end: '17:00' }, 4: { start: '09:00', end: '17:00' }, 5: { start: '09:00', end: '17:00' }, 6: { start: '00:00', end: '00:00' }, },
+                tasks: [ { id: 't1', name: 'Pushups', value: 10, unit: 'reps', points: 10, enabled: true, consecutiveSuccesses: 0, scheduledDay: 'any' }, { id: 't2', name: 'Pull ups', value: 5, unit: 'reps', points: 20, enabled: true, consecutiveSuccesses: 0, scheduledDay: 'any' }, ],
+                rewards: [ { id: 'r1', name: 'Eat Candy', points: 50, enabled: true }, { id: 'r2', name: '30min Me Time', points: 100, enabled: true }, ],
                 forfeits: {
                     tasks: [ { id: 'ft1', name: 'Face the corner', enabled: true }, { id: 'ft2', name: 'Face the wall', enabled: true }, ],
                     positions: [ { id: 'fp1', name: 'Hands in air', enabled: true }, { id: 'fp2', name: 'Hands on hair', enabled: true }, ],
-                    duration: 900,
+                    baseDuration: 900, // Base duration in seconds (15 mins)
                 }
             };
         },
@@ -152,10 +119,8 @@
                 const s = localStorage.getItem('taskmaster_state');
                 if (s) {
                     let loadedState = JSON.parse(s);
-                    // Add default schedule if missing
-                    if (!loadedState.schedule) {
-                         loadedState.schedule = this.getDefaultState().schedule;
-                    }
+                    if (!loadedState.schedule) { loadedState.schedule = this.getDefaultState().schedule; }
+                    if (!loadedState.forfeits.baseDuration) { loadedState.forfeits.baseDuration = loadedState.forfeits.duration || 900; } // Migrate old duration
                     if(loadedState.tasks) { loadedState.tasks.forEach(t => { if (t.scheduledDay === undefined) t.scheduledDay = 'any'; if (t.consecutiveSuccesses === undefined) t.consecutiveSuccesses = 0; }); }
                     if(loadedState.rewards) { loadedState.rewards.forEach(r => { if (r.enabled === undefined) r.enabled = true; }); }
                     this.state = { ...this.getDefaultState(), ...loadedState };
@@ -172,7 +137,7 @@
             document.getElementById('shop-btn').addEventListener('click', () => { if (this.state.compliance <= 50) { this.showResult('Shop Privileges Revoked!', `Compliance is at ${this.state.compliance}%. Get it above 50% to regain access.`); } else { this.renderShopModal(true); this.showModal('shop-modal'); } });
             document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', e => this.hideModal(e.target.dataset.modal)));
             document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', e => this.switchTab(e.target)));
-            document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'skip-task-btn') this.skipTask(); if (e.target.id === 'complete-forfeit-btn') this.showModal('feedback-modal'); });
+            document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'skip-task-btn') this.skipTask(); if (e.target.id === 'complete-forfeit-btn') this.completeForfeit(); }); // Changed target here
             document.getElementById('result-ok-btn').addEventListener('click', () => { this.hideModal('result-modal'); this.checkForNewTask(); this.render(); });
             document.querySelectorAll('.feedback-btn').forEach(btn => btn.addEventListener('click', e => this.handleForfeitFeedback(e.target.dataset.feedback)));
             document.getElementById('edit-cancel-btn').addEventListener('click', () => this.hideModal('edit-modal'));
@@ -186,48 +151,9 @@
         checkDateAndReset() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastTaskDate!==t){this.state.lastTaskDate=t;this.state.dailyTasksAssigned=0;this.saveState();} },
         checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){ const a=this.state.rewards.filter(r=>r.enabled); if(this.state.rewardsRedeemedToday>=3){a.forEach(r=>r.points=Math.round(r.points*1.05));this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){a.forEach(r=>r.points=Math.max(1,Math.round(r.points*0.95)));this.state.saleIsOn=true;}else{this.state.saleIsOn=false;} this.state.rewardsRedeemedToday=0;} this.state.lastPriceCheckDate=t; this.saveState(); },
         checkStreak() { if (!this.state.lastStreakDate) return; const today = dayjs().startOf('day'); const lastDate = dayjs(this.state.lastStreakDate).startOf('day'); if (today.diff(lastDate, 'day') > 1) { this.state.currentStreak = 0; } },
-        
-        isWithinScheduledTime() {
-            const now = dayjs();
-            const currentDay = now.day(); // 0 = Sunday, 6 = Saturday
-            const schedule = this.state.schedule[currentDay];
-            
-            if (!schedule || schedule.start === '00:00' && schedule.end === '00:00') {
-                return false; // Not scheduled for today
-            }
-
-            const startTime = dayjs(schedule.start, 'HH:mm');
-            const endTime = dayjs(schedule.end, 'HH:mm');
-            
-            // Handle overnight schedules (e.g., 22:00 to 06:00)
-            if (endTime.isBefore(startTime)) {
-                // If current time is after start OR before end (on the next day concept)
-                 return now.isAfter(startTime) || now.isBefore(endTime);
-            } else {
-                // Standard same-day schedule
-                return now.isAfter(startTime) && now.isBefore(endTime);
-            }
-        },
-
-        startScheduleCheck() {
-            clearInterval(this.scheduleCheckInterval); // Clear any existing interval
-            this.scheduleCheckInterval = setInterval(() => {
-                if (!this.state.activeTask && this.isWithinScheduledTime()) {
-                    this.checkForNewTask();
-                    this.render(); // Update UI if needed
-                }
-            }, 60000); // Check every minute
-        },
-
-        checkForNewTask() { 
-            if (this.isWithinScheduledTime()) {
-                if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { 
-                    this.assignTask(); 
-                }
-            } else {
-                 console.log("Outside scheduled hours, no task assigned.");
-            }
-        },
+        isWithinScheduledTime() { const n=dayjs(),d=n.day(),s=this.state.schedule[d]; if(!s||s.start==='00:00'&&s.end==='00:00'){return false;} const t=dayjs(s.start,'HH:mm'),e=dayjs(s.end,'HH:mm'); if(e.isBefore(t)){return n.isAfter(t)||n.isBefore(e);}else{return n.isAfter(t)&&n.isBefore(e);} },
+        startScheduleCheck() { clearInterval(this.scheduleCheckInterval); this.scheduleCheckInterval = setInterval(() => { if (!this.state.activeTask && this.isWithinScheduledTime()) { this.checkForNewTask(); this.render(); } }, 60000); },
+        checkForNewTask() { if (this.isWithinScheduledTime()) { if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { this.assignTask(); } } },
         
         assignTask() {
             const today = dayjs().day();
@@ -248,32 +174,13 @@
         },
 
         completeTask() {
-            clearInterval(this.timerInterval);
+            clearInterval(this.timerInterval); this.timerInterval = null;
             const task = this.state.activeTask;
             const originalTask = this.state.tasks.find(t => t.id === task.id);
             let detailsMessage = '';
-            if(originalTask) {
-                originalTask.consecutiveSuccesses = (originalTask.consecutiveSuccesses || 0) + 1;
-                if(originalTask.consecutiveSuccesses >= 3 && originalTask.unit !== 'area') {
-                    const oldValue = originalTask.value;
-                    originalTask.value = Math.ceil(oldValue * 1.1);
-                    originalTask.consecutiveSuccesses = 0;
-                    detailsMessage += `<p class="text-brand-success mt-2">✨ ${originalTask.name} leveled up! New goal: ${originalTask.value} ${originalTask.unit}.</p>`;
-                }
-            }
-            const today = dayjs().format('YYYY-MM-DD');
-            const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
-            if (this.state.lastStreakDate !== today) {
-                if (this.state.lastStreakDate === yesterday) { this.state.currentStreak++; } 
-                else { this.state.currentStreak = 1; }
-                this.state.lastStreakDate = today;
-                detailsMessage += `<p class="text-yellow-400 mt-2">🔥 Daily Streak: ${this.state.currentStreak} day(s)!</p>`;
-            }
-            this.state.totalTasksCompleted++;
-            if (this.state.totalTasksCompleted > 0 && this.state.totalTasksCompleted % 20 === 0) {
-                this.state.skipPasses++;
-                detailsMessage += `<p class="text-blue-400 mt-2">🎟️ You earned a Skip Pass!</p>`;
-            }
+            if(originalTask) { originalTask.consecutiveSuccesses=(originalTask.consecutiveSuccesses||0)+1; if(originalTask.consecutiveSuccesses>=3&&originalTask.unit!=='area'){const o=originalTask.value;originalTask.value=Math.ceil(o*1.1);originalTask.consecutiveSuccesses=0;detailsMessage+=`<p class="text-brand-success mt-2">✨ ${originalTask.name} leveled up! New goal: ${originalTask.value} ${originalTask.unit}.</p>`;} }
+            const today=dayjs().format('YYYY-MM-DD'),yesterday=dayjs().subtract(1,'day').format('YYYY-MM-DD'); if(this.state.lastStreakDate!==today){ if(this.state.lastStreakDate===yesterday){this.state.currentStreak++;} else{this.state.currentStreak=1;} this.state.lastStreakDate=today; detailsMessage+=`<p class="text-yellow-400 mt-2">🔥 Daily Streak: ${this.state.currentStreak} day(s)!</p>`;}
+            this.state.totalTasksCompleted++; if(this.state.totalTasksCompleted>0&&this.state.totalTasksCompleted%20===0){this.state.skipPasses++;detailsMessage+=`<p class="text-blue-400 mt-2">🎟️ You earned a Skip Pass!</p>`;}
             this.state.points += task.points;
             this.state.compliance = Math.min(100, this.state.compliance + 10);
             this.state.activeTask = null;
@@ -282,7 +189,7 @@
             this.render();
         },
         
-        skipTask() { if (this.state.skipPasses > 0) { clearInterval(this.timerInterval); this.state.skipPasses--; this.state.activeTask = null; this.saveState(); this.showResult('Task Skipped', `You used a skip pass. You have ${this.state.skipPasses} remaining.`); this.render(); } },
+        skipTask() { if (this.state.skipPasses > 0) { clearInterval(this.timerInterval); this.timerInterval = null; this.state.skipPasses--; this.state.activeTask = null; this.saveState(); this.showResult('Task Skipped', `You used a skip pass. You have ${this.state.skipPasses} remaining.`); this.render(); } },
 
         failTaskByTimer() {
             if (!this.state.activeTask || this.state.activeTask.type !== 'task') return;
@@ -292,14 +199,7 @@
             let detailsMessage = '';
             
             const originalTask = this.state.tasks.find(t => t.id === failedTask.id);
-            if(originalTask) {
-                originalTask.consecutiveSuccesses = 0;
-                if (originalTask.unit !== 'area') {
-                    const oldValue = originalTask.value;
-                    originalTask.value = Math.max(1, Math.floor(oldValue * 0.9));
-                    detailsMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`;
-                }
-            }
+            if(originalTask) { originalTask.consecutiveSuccesses = 0; if (originalTask.unit !== 'area') { const o=originalTask.value; originalTask.value = Math.max(1, Math.floor(o * 0.9)); detailsMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`; } }
             
             const newCompliance = Math.max(0, this.state.compliance - this.state.compliancePenalty);
             const newForfeit = this.calculateForfeit();
@@ -314,8 +214,24 @@
             else { this.showResult('Forfeit Skipped', `Task failed, but no forfeits are enabled. Compliance is now ${this.state.compliance}%. Your streak is broken.`, detailsMessage); }
         },
 
-        calculateForfeit() { const t=this.state.forfeits.tasks.filter(t=>t.enabled),p=this.state.forfeits.positions.filter(p=>p.enabled);if(t.length===0||p.length===0){return null;} const r=t[Math.floor(Math.random()*t.length)],o=p[Math.floor(Math.random()*p.length)];return{id:`f-${Date.now()}`,name:r.name,position:o.name,duration:this.state.forfeits.duration,assignedAt:Date.now(),type:'forfeit'}; },
-        handleForfeitFeedback(f){const d=this.state.forfeits.duration;if(f==='easy'){this.state.forfeits.duration=Math.round(d*1.1);if(this.state.tasksPerDay<12)this.state.tasksPerDay++;}else if(f==='ok'){this.state.forfeits.duration=Math.round(d*1.05);}else if(f==='hard'){this.state.forfeits.duration=Math.max(60,Math.round(d*.9));if(this.state.tasksPerDay>1)this.state.tasksPerDay--;}this.state.activeTask=null;this.hideModal('feedback-modal');this.saveState();this.showResult('Forfeit Complete','Discipline administered. Get back to it.');this.render();},
+        calculateForfeit() { const t=this.state.forfeits.tasks.filter(t=>t.enabled),p=this.state.forfeits.positions.filter(p=>p.enabled);if(t.length===0||p.length===0){return null;} const r=t[Math.floor(Math.random()*t.length)],o=p[Math.floor(Math.random()*p.length)];return{id:`f-${Date.now()}`,name:r.name,position:o.name,currentDuration:this.state.forfeits.baseDuration,assignedAt:Date.now(),type:'forfeit', lastPenaltyHour: 0}; }, // Added currentDuration & lastPenaltyHour
+
+        completeForfeit() {
+            clearInterval(this.timerInterval); this.timerInterval = null;
+            this.showModal('feedback-modal'); // Still ask for feedback
+        },
+
+        handleForfeitFeedback(f){
+            const d=this.state.forfeits.baseDuration; // Adjust base duration for next time
+            if(f==='easy'){this.state.forfeits.baseDuration=Math.round(d*1.1);if(this.state.tasksPerDay<12)this.state.tasksPerDay++;}
+            else if(f==='ok'){this.state.forfeits.baseDuration=Math.round(d*1.05);}
+            else if(f==='hard'){this.state.forfeits.baseDuration=Math.max(60,Math.round(d*.9));if(this.state.tasksPerDay>1)this.state.tasksPerDay--;}
+            this.state.activeTask=null; // Clear the completed forfeit
+            this.hideModal('feedback-modal');
+            this.saveState();
+            this.showResult('Forfeit Complete','Discipline administered. Get back to it.');
+            this.render();
+        },
         redeemReward(e){const{id:t}=e.target.dataset,r=this.state.rewards.find(r=>r.id===t);if(r&&this.state.points>=r.points){this.state.points-=r.points;this.state.rewardsRedeemedToday++;this.state.rewardLog.unshift({name:r.name,points:r.points,redeemedAt:Date.now()});this.saveState();this.render();this.renderShopModal(true);this.showResult('Reward Claimed!',`You redeemed "${r.name}" for ${r.points} points.`);}},
         
         render() { this.renderMainContent(); this.renderManagement(); this.renderHeader(); this.renderComplianceBar(); },
@@ -326,64 +242,65 @@
             if (this.state.activeTask && this.state.activeTask.type === 'task') { this.renderActiveTask(mainContent); } 
             else if (this.state.activeTask && this.state.activeTask.type === 'forfeit') { this.renderActiveForfeit(mainContent); } 
             else {
-                 if (!this.isWithinScheduledTime()) {
-                     mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">Outside Active Hours.</h2><p class="text-brand-subtle">Standing by.</p>`;
-                 } else {
-                     const enabledTasks = this.state.tasks.filter(t => t.enabled);
-                     if (enabledTasks.length === 0) { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-warning mb-2">No Tasks Enabled</h2><p class="text-brand-subtle">Go to 'Manage' and add tasks to your roster.</p>`; } 
-                     else { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">Awaiting Orders.</h2><p class="text-brand-subtle">Stand by for your next assignment.</p>`; }
-                 }
+                 if (!this.isWithinScheduledTime()) { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">Outside Active Hours.</h2><p class="text-brand-subtle">Standing by.</p>`; } 
+                 else { const e=this.state.tasks.filter(t=>t.enabled); if(e.length===0){mainContent.innerHTML=`<h2 class="text-2xl font-bold text-brand-warning mb-2">No Tasks Enabled</h2><p class="text-brand-subtle">Go to 'Manage' and add tasks to your roster.</p>`;} else{mainContent.innerHTML=`<h2 class="text-2xl font-bold text-brand-text mb-2">Awaiting Orders.</h2><p class="text-brand-subtle">Stand by for your next assignment.</p>`;} }
             }
         },
         renderActiveTask(c){ const t = this.state.activeTask; const d = t.assignedAt + (this.state.taskDurationHours * 60 * 60 * 1000); const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg">Skip Task (${this.state.skipPasses})</button>` : ''; c.innerHTML=`<p class="text-brand-subtle mb-2">Your Orders:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex justify-center space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button>${skipButton}</div>`; const e=document.getElementById('timer'); clearInterval(this.timerInterval); this.timerInterval = setInterval(() => { const s = d - Date.now(); if (s <= 0) { clearInterval(this.timerInterval); this.failTaskByTimer(); } else { const h=Math.floor(s/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3); if(e) e.textContent=`Time left: ${h}h ${m}m ${c}s`; } }, 1000); },
-        renderActiveForfeit(c){const f=this.state.activeTask,d=dayjs.duration(f.duration,'seconds').format('m [minutes and] s [seconds]');c.innerHTML=`<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${f.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${f.position}</p><p class="text-xl text-brand-warning mb-6">Duration: ${d}</p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">Forfeit Completed</button>`;},
+        renderActiveForfeit(c){
+            const f = this.state.activeTask;
+            const d = f.assignedAt + (f.currentDuration * 1000); // Deadline based on current (potentially increased) duration
+            const baseDuration = this.state.forfeits.baseDuration; // Original duration for penalty calc
+            
+            c.innerHTML=`<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${f.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${f.position}</p><div class="text-lg text-brand-warning mb-2" id="forfeit-timer"></div><p id="total-forfeit-duration" class="text-sm text-brand-warning mb-6"></p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">Forfeit Completed</button>`; 
+            
+            const timerEl = document.getElementById('forfeit-timer');
+            const totalDurationEl = document.getElementById('total-forfeit-duration');
+            
+            const updateTimerDisplay = () => {
+                const now = Date.now();
+                const timeLeft = d - now;
+                const currentTotalDurationStr = dayjs.duration(f.currentDuration, 'seconds').format('H[h] m[m] s[s]');
+                totalDurationEl.textContent = `(Total required: ${currentTotalDurationStr})`;
+
+                if (timeLeft > 0) {
+                    const h=Math.floor(timeLeft/36e5),m=Math.floor(timeLeft%36e5/6e4),s=Math.floor(timeLeft%6e4/1e3);
+                    timerEl.textContent = `Time left: ${h}h ${m}m ${s}s`;
+                    timerEl.classList.remove('text-brand-danger');
+                    timerEl.classList.add('text-brand-warning');
+                } else {
+                    const overdue = now - d;
+                    const oh=Math.floor(overdue/36e5),om=Math.floor(overdue%36e5/6e4),os=Math.floor(overdue%6e4/1e3);
+                    timerEl.textContent = `Overdue by: ${oh}h ${om}m ${os}s`;
+                    timerEl.classList.add('text-brand-danger');
+                    timerEl.classList.remove('text-brand-warning');
+
+                    // Check for penalty hour
+                    const hoursOverdue = Math.floor(overdue / 3600000); // Full hours overdue
+                    if (hoursOverdue >= f.lastPenaltyHour + 1) {
+                         f.currentDuration += baseDuration;
+                         f.lastPenaltyHour = hoursOverdue;
+                         this.saveState(); // Save the increased duration immediately
+                         // Update deadline for next interval check
+                         d = f.assignedAt + (f.currentDuration * 1000); 
+                         // No need to re-render, updateTimerDisplay will handle it next tick
+                         console.log(`Forfeit duration increased to ${f.currentDuration} seconds`);
+                    }
+                }
+            };
+
+            clearInterval(this.timerInterval); 
+            updateTimerDisplay(); // Initial display
+            this.timerInterval = setInterval(updateTimerDisplay, 1000);
+        },
         renderComplianceBar() { const bar = document.getElementById('compliance-bar'); const text = document.getElementById('compliance-text'); if (bar && text) { bar.style.width = `${this.state.compliance}%`; text.textContent = `Compliance: ${this.state.compliance}%`; } },
         switchTab(e){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));e.classList.add('tab-active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById(`${e.dataset.tab}-tab`).classList.remove('hidden');this.renderManagement();},
-        renderManagement(){
-            const activeTab = document.querySelector('#manage-modal .tab-active').dataset.tab;
-            if (activeTab === 'tasks') this.renderList('tasks', this.state.tasks, ['name', 'value', 'unit', 'points']);
-            if (activeTab === 'rewards') this.renderList('rewards', this.state.rewards, ['name', 'points']);
-            if (activeTab === 'forfeits') this.renderForfeitsTab();
-            if (activeTab === 'schedule') this.renderScheduleTab(); // Render new tab
-            if (activeTab === 'settings') this.renderSettingsTab();
-        },
+        renderManagement(){ const a=document.querySelector('#manage-modal .tab-active').dataset.tab; if(a==='tasks')this.renderList('tasks',this.state.tasks,['name','value','unit','points','scheduledDay']); if(a==='rewards')this.renderList('rewards',this.state.rewards,['name','points']); if(a==='forfeits')this.renderForfeitsTab(); if(a==='schedule')this.renderScheduleTab(); if(a==='settings')this.renderSettingsTab(); },
         renderShopModal(s){const c=document.getElementById('shop-content'),t=document.getElementById('log-toggle-btn');if(s){const a=this.state.saleIsOn?`<div class="bg-green-500/20 border border-green-500 text-green-300 text-center p-3 rounded-lg mb-4">🔥 **REWARD SALE ON!** All prices are 5% off today! 🔥</div>`:'';const i=this.state.rewards.filter(r => r.enabled).map(item=>{const n=this.state.points>=item.points;return` <div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2 ${n?'':'opacity-50'}"> <div> <p class="font-semibold">${item.name}</p> <p class="text-sm font-bold ${this.state.saleIsOn?'text-green-400':'text-brand-accent'}">${item.points} Points</p> </div> <button class="btn redeem-reward-btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-1 px-3 rounded-md text-sm" data-id="${item.id}" ${n?'':'disabled'}>Redeem</button> </div>`}).join('');c.innerHTML=a + (i.length > 0 ? i : '<p class="text-brand-subtle">No rewards enabled. Go to Manage -> Rewards.</p>');t.textContent='View Purchase History';}else{let l='<h3 class="text-lg font-bold mb-4">Purchase History</h3>';if(this.state.rewardLog.length===0){l+='<p class="text-brand-subtle">You haven\'t purchased any rewards yet.</p>';}else{l+=this.state.rewardLog.map(log=>` <div class="flex justify-between items-center p-2 bg-brand-primary rounded-md mb-2"> <div> <p class="font-semibold">${log.name}</p> <p class="text-xs text-brand-subtle">${dayjs(log.redeemedAt).fromNow()}</p> </div> <p class="font-bold text-brand-accent">${log.points}</p> </div>`).join('');}c.innerHTML=l;t.textContent='Back to Shop';}},
-        renderList(t,i,f){const c=document.getElementById(`${t}-tab`),h=i.map(item=>`<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="${t}" data-id="${item.id}" ${item.enabled?'checked':''}></label><div><p class="font-semibold ${item.enabled?'':'line-through text-gray-500'}">${item.name}</p><p class="text-sm text-brand-subtle">${f.slice(1).map(k=>`${k.charAt(0).toUpperCase()+k.slice(1)}: ${item[k]}`).join(', ')}</p></div></div><div><button class="edit-item-btn text-brand-subtle hover:text-white mr-2" data-type="${t}" data-id="${item.id}">Edit</button><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="${t}" data-id="${item.id}">Delete</button></div></div>`).join('');c.innerHTML=`<div class="mb-6">${h}</div><button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-4 rounded-lg" data-type="${t}">Add New ${t.slice(0,-1)}</button>`;c.querySelectorAll('.form-checkbox').forEach(b=>b.addEventListener('change',e=>this.toggleEnable(e)));c.querySelectorAll('.delete-item-btn').forEach(b=>b.addEventListener('click',e=>this.deleteItem(e)));c.querySelectorAll('.add-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleAddItem(e)));c.querySelectorAll('.edit-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleEditItem(e)));},
+        renderList(t,i,f){const c=document.getElementById(`${t}-tab`),h=i.map(item=>{ let details = f.slice(1).map(k=>{ if(k==='scheduledDay'){const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; return `Schedule: ${item[k]==='any'?'Any':days[item[k]]}`;} else { return `${k.charAt(0).toUpperCase()+k.slice(1)}: ${item[k]}`; } }).join(', '); return `<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="${t}" data-id="${item.id}" ${item.enabled?'checked':''}></label><div><p class="font-semibold ${item.enabled?'':'line-through text-gray-500'}">${item.name}</p><p class="text-sm text-brand-subtle">${details}</p></div></div><div><button class="edit-item-btn text-brand-subtle hover:text-white mr-2" data-type="${t}" data-id="${item.id}">Edit</button><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="${t}" data-id="${item.id}">Delete</button></div></div>`; }).join('');c.innerHTML=`<div class="mb-6">${h}</div><button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-4 rounded-lg" data-type="${t}">Add New ${t.slice(0,-1)}</button>`;c.querySelectorAll('.form-checkbox').forEach(b=>b.addEventListener('change',e=>this.toggleEnable(e)));c.querySelectorAll('.delete-item-btn').forEach(b=>b.addEventListener('click',e=>this.deleteItem(e)));c.querySelectorAll('.add-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleAddItem(e)));c.querySelectorAll('.edit-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleEditItem(e)));},
         renderForfeitsTab(){const c=document.getElementById('forfeits-tab'),{tasks:t,positions:p}=this.state.forfeits,r=(s,l)=>l.map(i=>`<div class="flex items-center justify-between p-3 rounded-lg bg-brand-primary mb-2"><div class="flex items-center"><label class="flex items-center cursor-pointer mr-4"><input type="checkbox" class="form-checkbox h-5 w-5 text-brand-accent bg-gray-800 border-gray-600 rounded focus:ring-brand-accent" data-type="forfeits" data-subtype="${s}" data-id="${i.id}" ${i.enabled?'checked':''}></label><p class="font-semibold ${i.enabled?'':'line-through text-gray-500'}">${i.name}</p></div><div><button class="delete-item-btn text-brand-danger hover:text-red-400" data-type="forfeits" data-subtype="${s}" data-id="${i.id}">Delete</button></div></div>`).join('');c.innerHTML=`<div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Tasks</h3>${r('tasks',t)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="tasks">Add New Task</button></div><div class="mb-4"><h3 class="text-lg font-semibold mb-2">Forfeit Positions</h3>${r('positions',p)}<button class="add-item-btn w-full btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-2 px-4 rounded-lg mt-2" data-type="forfeits" data-subtype="positions">Add New Position</button></div>`;c.querySelectorAll('.form-checkbox').forEach(b=>b.addEventListener('change',e=>this.toggleEnable(e)));c.querySelectorAll('.delete-item-btn').forEach(b=>b.addEventListener('click',e=>this.deleteItem(e)));c.querySelectorAll('.add-item-btn').forEach(b=>b.addEventListener('click',e=>this.handleAddItem(e)));},
-        renderScheduleTab() {
-            const container = document.getElementById('schedule-tab');
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            let html = '<p class="text-brand-subtle mb-4">Set the start and end times during which tasks can be assigned each day. Set both to 00:00 to disable tasks for that day.</p>';
-            days.forEach((day, index) => {
-                const daySchedule = this.state.schedule[index] || { start: '00:00', end: '00:00' };
-                html += `
-                <div class="bg-brand-primary p-4 rounded-lg mb-3">
-                    <label class="block text-lg font-semibold mb-2">${day}</label>
-                    <div class="flex space-x-4">
-                        <div class="flex-1">
-                            <label class="block text-sm text-brand-subtle mb-1">Start Time</label>
-                            <input type="time" id="start-${index}" value="${daySchedule.start}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-sm text-brand-subtle mb-1">End Time</label>
-                            <input type="time" id="end-${index}" value="${daySchedule.end}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600">
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += `<div class="mt-6"><button id="save-schedule-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Schedule</button></div>`;
-            container.innerHTML = html;
-            document.getElementById('save-schedule-btn').addEventListener('click', () => {
-                 days.forEach((_, index) => {
-                     const start = document.getElementById(`start-${index}`).value;
-                     const end = document.getElementById(`end-${index}`).value;
-                     this.state.schedule[index] = { start, end };
-                 });
-                 this.saveState();
-                 this.showResult("Schedule Saved", "Your task schedule has been updated.");
-             });
-        },
-        renderSettingsTab(){const c=document.getElementById('settings-tab');c.innerHTML=`<div class="bg-brand-primary p-4 rounded-lg"><label for="tasks-per-day" class="block text-lg font-semibold mb-2">Tasks Per Day</label><input type="number" id="tasks-per-day" min="1" max="12" value="${this.state.tasksPerDay}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how many tasks you want to be assigned each day (1-12).</p></div> <div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="task-duration" class="block text-lg font-semibold mb-2">Task Duration (hours)</label><input type="number" id="task-duration" min="1" max="24" value="${this.state.taskDurationHours}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how long you have to complete a task.</p></div> <div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="forfeit-duration" class="block text-lg font-semibold mb-2">Base Forfeit Duration (minutes)</label><input type="number" id="forfeit-duration" min="1" value="${this.state.forfeits.duration/60}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div> <div class="mt-6"><button id="save-settings-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button></div>`;document.getElementById('save-settings-btn').addEventListener('click',()=>{this.state.tasksPerDay=parseInt(document.getElementById('tasks-per-day').value,10);this.state.taskDurationHours=parseInt(document.getElementById('task-duration').value,10);this.state.forfeits.duration=parseInt(document.getElementById('forfeit-duration').value,10)*60;this.saveState();this.showResult("Settings Saved","Your new settings have been applied.");});},
+        renderScheduleTab() { const c=document.getElementById('schedule-tab'); const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; let h='<p class="text-brand-subtle mb-4">Set start/end times for tasks each day. Set both to 00:00 to disable tasks.</p>'; days.forEach((day,idx)=>{ const ds=this.state.schedule[idx]||{start:'00:00',end:'00:00'}; h+=`<div class="bg-brand-primary p-4 rounded-lg mb-3"><label class="block text-lg font-semibold mb-2">${day}</label><div class="flex space-x-4"><div class="flex-1"><label class="block text-sm text-brand-subtle mb-1">Start Time</label><input type="time" id="start-${idx}" value="${ds.start}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div><div class="flex-1"><label class="block text-sm text-brand-subtle mb-1">End Time</label><input type="time" id="end-${idx}" value="${ds.end}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div></div></div>`; }); h+=`<div class="mt-6"><button id="save-schedule-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Schedule</button></div>`; c.innerHTML=h; document.getElementById('save-schedule-btn').addEventListener('click',()=>{ days.forEach((_,idx)=>{ const s=document.getElementById(`start-${idx}`).value,e=document.getElementById(`end-${idx}`).value; this.state.schedule[idx]={start:s,end:e}; }); this.saveState(); this.showResult("Schedule Saved","Your task schedule has been updated."); }); },
+        renderSettingsTab(){const c=document.getElementById('settings-tab');c.innerHTML=`<div class="bg-brand-primary p-4 rounded-lg"><label for="tasks-per-day" class="block text-lg font-semibold mb-2">Tasks Per Day</label><input type="number" id="tasks-per-day" min="1" max="12" value="${this.state.tasksPerDay}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how many tasks you want to be assigned each day (1-12).</p></div> <div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="task-duration" class="block text-lg font-semibold mb-2">Task Duration (hours)</label><input type="number" id="task-duration" min="1" max="24" value="${this.state.taskDurationHours}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"><p class="text-sm text-brand-subtle mt-2">Set how long you have to complete a task.</p></div> <div class="bg-brand-primary p-4 rounded-lg mt-4"><label for="forfeit-duration" class="block text-lg font-semibold mb-2">Base Forfeit Duration (minutes)</label><input type="number" id="forfeit-duration" min="1" value="${this.state.forfeits.baseDuration/60}" class="w-full bg-brand-secondary text-white p-2 rounded-md border border-gray-600"></div> <div class="mt-6"><button id="save-settings-btn" class="w-full btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button></div>`;document.getElementById('save-settings-btn').addEventListener('click',()=>{this.state.tasksPerDay=parseInt(document.getElementById('tasks-per-day').value,10);this.state.taskDurationHours=parseInt(document.getElementById('task-duration').value,10);this.state.forfeits.baseDuration=parseInt(document.getElementById('forfeit-duration').value,10)*60;this.saveState();this.showResult("Settings Saved","Your new settings have been applied.");});},
         toggleEnable(e){const{type:t,id:i,subtype:s}=e.target.dataset;let a;if(t==='forfeits'){a=this.state.forfeits[s].find(item=>item.id===i);}else{a=this.state[t].find(item=>item.id===i);}if(a){a.enabled=e.target.checked;this.saveState();this.renderManagement();}},
         deleteItem(e){const{type:t,id:i,subtype:s}=e.target.closest('button').dataset;if(confirm('Are you sure you want to delete this item?')){if(t==='forfeits'){this.state.forfeits[s]=this.state.forfeits[s].filter(item=>item.id!==i);}else{this.state[t]=this.state[t].filter(item=>item.id!==i);}this.saveState();this.renderManagement();}},
         handleAddItem(e){const{type:t,subtype:s}=e.target.dataset;this.openEditModal(t,null,s);},
