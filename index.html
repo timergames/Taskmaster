@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskMaster: Drill Sergeant Edition</title>
+    <title>TaskMaster: Your Life Gamified</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
@@ -52,7 +52,7 @@
         <header class="flex justify-between items-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
             <div class="flex items-center space-x-4">
-                 <div id="streak-display" class="text-right">
+                <div id="streak-display" class="text-right">
                     <!-- Streak will be rendered here -->
                 </div>
                 <div class="text-right">
@@ -93,7 +93,7 @@
 
 <script type="module">
     const App = {
-        state: {}, timerInterval: null, isProcessingFailure: false,
+        state: {}, timerInterval: null,
         
         getDefaultState() {
             return {
@@ -111,7 +111,7 @@
                 forfeits: {
                     tasks: [ { id: 'ft1', name: 'Face the corner', enabled: true }, { id: 'ft2', name: 'Face the wall', enabled: true }, ],
                     positions: [ { id: 'fp1', name: 'Hands in air', enabled: true }, { id: 'fp2', name: 'Hands on hair', enabled: true }, ],
-                    duration: 900, // 15 minutes
+                    duration: 900,
                 }
             };
         },
@@ -122,17 +122,17 @@
                 const s = localStorage.getItem('taskmaster_state');
                 if (s) {
                     let loadedState = JSON.parse(s);
-                    // Add default values for new properties to older save files
-                    loadedState.tasks.forEach(t => {
-                        if (t.scheduledDay === undefined) t.scheduledDay = 'any';
-                        if (t.consecutiveSuccesses === undefined) t.consecutiveSuccesses = 0;
-                    });
+                    if(loadedState.tasks) {
+                        loadedState.tasks.forEach(t => {
+                            if (t.scheduledDay === undefined) t.scheduledDay = 'any';
+                            if (t.consecutiveSuccesses === undefined) t.consecutiveSuccesses = 0;
+                        });
+                    }
                     this.state = { ...this.getDefaultState(), ...loadedState };
-                } else {
-                    this.state = this.getDefaultState();
-                }
+                } else { this.state = this.getDefaultState(); }
             } catch (error) {
                 console.error("Error loading state, resetting to default:", error);
+                localStorage.removeItem('taskmaster_state');
                 this.state = this.getDefaultState();
             }
         },
@@ -159,14 +159,7 @@
 
         checkDateAndReset() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastTaskDate!==t){this.state.lastTaskDate=t;this.state.dailyTasksAssigned=0;this.saveState();} },
         checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){if(this.state.rewardsRedeemedToday>=3){this.state.rewards.forEach(r=>r.points=Math.round(r.points*1.05));this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.rewards.forEach(r=>r.points=Math.max(1,Math.round(r.points*0.95)));this.state.saleIsOn=true;}else{this.state.saleIsOn=false;}this.state.rewardsRedeemedToday=0;}this.state.lastPriceCheckDate=t;this.saveState(); },
-        checkStreak() {
-            if (!this.state.lastStreakDate) return;
-            const today = dayjs().startOf('day');
-            const lastDate = dayjs(this.state.lastStreakDate).startOf('day');
-            if (today.diff(lastDate, 'day') > 1) {
-                this.state.currentStreak = 0;
-            }
-        },
+        checkStreak() { if (!this.state.lastStreakDate) return; const today = dayjs().startOf('day'); const lastDate = dayjs(this.state.lastStreakDate).startOf('day'); if (today.diff(lastDate, 'day') > 1) { this.state.currentStreak = 0; } },
         checkForNewTask() { if (!this.state.activeTask && this.state.dailyTasksAssigned < this.state.tasksPerDay) { this.assignTask(); } },
         
         assignTask() {
@@ -175,12 +168,8 @@
             const randomTasks = this.state.tasks.filter(t => t.enabled && t.scheduledDay === 'any');
             
             let taskToAssign = null;
-            
-            if (this.state.dailyTasksAssigned < scheduledTasks.length) {
-                taskToAssign = scheduledTasks[this.state.dailyTasksAssigned];
-            } else if (randomTasks.length > 0) {
-                taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)];
-            }
+            if (this.state.dailyTasksAssigned < scheduledTasks.length) { taskToAssign = scheduledTasks[this.state.dailyTasksAssigned]; } 
+            else if (randomTasks.length > 0) { taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)]; }
             
             if (taskToAssign) {
                 let nameString = (taskToAssign.unit === 'area') ? `${taskToAssign.name}` : `${taskToAssign.value} ${taskToAssign.unit} ${taskToAssign.name}`;
@@ -196,8 +185,6 @@
             const task = this.state.activeTask;
             const originalTask = this.state.tasks.find(t => t.id === task.id);
             let detailsMessage = '';
-
-            // Level up logic
             if(originalTask) {
                 originalTask.consecutiveSuccesses = (originalTask.consecutiveSuccesses || 0) + 1;
                 if(originalTask.consecutiveSuccesses >= 3 && originalTask.unit !== 'area') {
@@ -207,27 +194,19 @@
                     detailsMessage += `<p class="text-brand-success mt-2">✨ ${originalTask.name} leveled up! New goal: ${originalTask.value} ${originalTask.unit}.</p>`;
                 }
             }
-
-            // Streak logic
             const today = dayjs().format('YYYY-MM-DD');
             const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
             if (this.state.lastStreakDate !== today) {
-                if (this.state.lastStreakDate === yesterday) {
-                    this.state.currentStreak++;
-                } else {
-                    this.state.currentStreak = 1;
-                }
+                if (this.state.lastStreakDate === yesterday) { this.state.currentStreak++; } 
+                else { this.state.currentStreak = 1; }
                 this.state.lastStreakDate = today;
                 detailsMessage += `<p class="text-yellow-400 mt-2">🔥 Daily Streak: ${this.state.currentStreak} day(s)!</p>`;
             }
-            
-            // Skip Pass logic
             this.state.totalTasksCompleted++;
-            if (this.state.totalTasksCompleted % 20 === 0) {
+            if (this.state.totalTasksCompleted > 0 && this.state.totalTasksCompleted % 20 === 0) {
                 this.state.skipPasses++;
                 detailsMessage += `<p class="text-blue-400 mt-2">🎟️ You earned a Skip Pass!</p>`;
             }
-
             this.state.points += task.points;
             this.state.compliance = Math.min(100, this.state.compliance + 10);
             this.state.activeTask = null;
@@ -236,48 +215,39 @@
             this.render();
         },
         
-        skipTask() {
-            if (this.state.skipPasses > 0) {
-                clearInterval(this.timerInterval);
-                this.state.skipPasses--;
-                this.state.activeTask = null;
-                this.saveState();
-                this.showResult('Task Skipped', `You used a skip pass. You have ${this.state.skipPasses} remaining.`);
-                this.render();
-            }
-        },
+        skipTask() { if (this.state.skipPasses > 0) { clearInterval(this.timerInterval); this.state.skipPasses--; this.state.activeTask = null; this.saveState(); this.showResult('Task Skipped', `You used a skip pass. You have ${this.state.skipPasses} remaining.`); this.render(); } },
 
         failTaskByTimer() {
-            if (this.isProcessingFailure) return;
-            this.isProcessingFailure = true;
-            clearInterval(this.timerInterval);
+            if (!this.state.activeTask || this.state.activeTask.type !== 'task') return;
             
-            const failedTask = this.state.activeTask;
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+            
+            const failedTask = { ...this.state.activeTask };
             let detailsMessage = '';
             
-            if(failedTask) {
-                 const originalTask = this.state.tasks.find(t => t.id === failedTask.id);
-                 if(originalTask) {
-                    originalTask.consecutiveSuccesses = 0;
-                     if (originalTask.unit !== 'area') {
-                         const oldValue = originalTask.value;
-                         originalTask.value = Math.max(1, Math.floor(oldValue * 0.9));
-                         detailsMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`;
-                     }
-                 }
+            const originalTask = this.state.tasks.find(t => t.id === failedTask.id);
+            if(originalTask) {
+                originalTask.consecutiveSuccesses = 0;
+                if (originalTask.unit !== 'area') {
+                    const oldValue = originalTask.value;
+                    originalTask.value = Math.max(1, Math.floor(oldValue * 0.9));
+                    detailsMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`;
+                }
             }
-            this.state.currentStreak = 0; // Streak is broken on failure
-            this.state.compliance = Math.max(0, this.state.compliance - this.state.compliancePenalty);
             
+            const newCompliance = Math.max(0, this.state.compliance - this.state.compliancePenalty);
             const newForfeit = this.calculateForfeit();
+            
             this.state.activeTask = newForfeit;
+            this.state.compliance = newCompliance;
+            this.state.currentStreak = 0;
+            
             this.saveState();
             this.render();
             
             if (newForfeit) { this.showResult("Time's Up!", `A forfeit has been assigned. Compliance is now ${this.state.compliance}%. Your streak is broken.`, detailsMessage); } 
             else { this.showResult('Forfeit Skipped', `Task failed, but no forfeits are enabled. Compliance is now ${this.state.compliance}%. Your streak is broken.`, detailsMessage); }
-
-            this.isProcessingFailure = false;
         },
 
         calculateForfeit() { const t=this.state.forfeits.tasks.filter(t=>t.enabled),p=this.state.forfeits.positions.filter(p=>p.enabled);if(t.length===0||p.length===0){return null;} const r=t[Math.floor(Math.random()*t.length)],o=p[Math.floor(Math.random()*p.length)];return{id:`f-${Date.now()}`,name:r.name,position:o.name,duration:this.state.forfeits.duration,assignedAt:Date.now(),type:'forfeit'}; },
@@ -286,16 +256,7 @@
         
         render() { this.renderMainContent(); this.renderManagement(); this.renderHeader(); this.renderComplianceBar(); },
         
-        renderHeader() {
-            document.getElementById('points-display').textContent = this.state.points;
-            const streakContainer = document.getElementById('streak-display');
-            if (this.state.currentStreak > 0) {
-                streakContainer.innerHTML = `<p class="text-brand-subtle text-sm">Streak</p><p class="text-2xl font-bold text-yellow-400">🔥 ${this.state.currentStreak}</p>`;
-            } else {
-                streakContainer.innerHTML = '';
-            }
-        },
-
+        renderHeader() { document.getElementById('points-display').textContent = this.state.points; const s = document.getElementById('streak-display'); if (this.state.currentStreak > 0) { s.innerHTML = `<p class="text-brand-subtle text-sm">Streak</p><p class="text-2xl font-bold text-yellow-400">🔥 ${this.state.currentStreak}</p>`; } else { s.innerHTML = ''; } },
         renderMainContent() {
             const mainContent = document.getElementById('main-content');
             if (this.state.activeTask && this.state.activeTask.type === 'task') { this.renderActiveTask(mainContent); } 
@@ -306,7 +267,24 @@
                  else { mainContent.innerHTML = `<h2 class="text-2xl font-bold text-brand-text mb-2">Awaiting Orders.</h2><p class="text-brand-subtle">Stand by for your next assignment.</p>`; }
             }
         },
-        renderActiveTask(c){ const t = this.state.activeTask; const d = t.assignedAt + (this.state.taskDurationHours * 60 * 60 * 1000); const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg">Skip Task (${this.state.skipPasses})</button>` : ''; c.innerHTML=`<p class="text-brand-subtle mb-2">Your Orders:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex justify-center space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button>${skipButton}</div>`; const e=document.getElementById('timer'); clearInterval(this.timerInterval); this.timerInterval=setInterval(()=>{ if(this.isProcessingFailure) return; const n=Date.now(),s=d-n; if(s<=0){ this.failTaskByTimer(); } else { const h=Math.floor(s/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3); if(document.getElementById('timer')) document.getElementById('timer').textContent=`Time left: ${h}h ${m}m ${c}s`; } }, 1000); },
+        renderActiveTask(c){
+            const t = this.state.activeTask; 
+            const d = t.assignedAt + (this.state.taskDurationHours * 60 * 60 * 1000); 
+            const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg">Skip Task (${this.state.skipPasses})</button>` : ''; 
+            c.innerHTML=`<p class="text-brand-subtle mb-2">Your Orders:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex justify-center space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button>${skipButton}</div>`; 
+            const e=document.getElementById('timer'); 
+            clearInterval(this.timerInterval); 
+            this.timerInterval = setInterval(() => {
+                const s = d - Date.now();
+                if (s <= 0) {
+                    clearInterval(this.timerInterval);
+                    this.failTaskByTimer();
+                } else {
+                    const h=Math.floor(s/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3);
+                    if(e) e.textContent=`Time left: ${h}h ${m}m ${c}s`;
+                }
+            }, 1000);
+        },
         renderActiveForfeit(c){const f=this.state.activeTask,d=dayjs.duration(f.duration,'seconds').format('m [minutes and] s [seconds]');c.innerHTML=`<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${f.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${f.position}</p><p class="text-xl text-brand-warning mb-6">Duration: ${d}</p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">Forfeit Completed</button>`;},
         renderComplianceBar() { const bar = document.getElementById('compliance-bar'); const text = document.getElementById('compliance-text'); if (bar && text) { bar.style.width = `${this.state.compliance}%`; text.textContent = `Compliance: ${this.state.compliance}%`; } },
         switchTab(e){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));e.classList.add('tab-active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById(`${e.dataset.tab}-tab`).classList.remove('hidden');this.renderManagement();},
