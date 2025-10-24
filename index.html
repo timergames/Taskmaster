@@ -54,7 +54,10 @@
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl font-sans">
         
         <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
+            <div class="flex items-center space-x-3"> <!-- Added container for image and title -->
+                <img id="compliance-avatar" src="1.png" alt="Compliance Status" class="h-10 w-10 md:h-12 md:w-12 rounded border-2 border-gray-600 object-cover" onerror="this.src='https://placehold.co/48x48/2c2c2c/a3a3a3?text=Err'"> <!-- Added image -->
+                <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
+            </div>
             <div class="flex items-center space-x-4">
                 <div id="streak-display" class="text-right"></div>
                 <div class="text-right">
@@ -137,7 +140,7 @@
             document.getElementById('shop-btn').addEventListener('click', () => { if (this.state.compliance <= 50) { this.showResult('Shop Privileges Revoked!', `Compliance is at ${this.state.compliance}%. Get it above 50% to regain access.`); } else { this.renderShopModal(true); this.showModal('shop-modal'); } });
             document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', e => this.hideModal(e.target.dataset.modal)));
             document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', e => this.switchTab(e.target)));
-            document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'skip-task-btn') this.skipTask(); if (e.target.id === 'complete-forfeit-btn') this.completeForfeit(); }); // Changed target here
+            document.getElementById('main-content').addEventListener('click', e => { if (e.target.id === 'complete-task-btn') this.completeTask(); if (e.target.id === 'skip-task-btn') this.skipTask(); if (e.target.id === 'complete-forfeit-btn') this.completeForfeit(); });
             document.getElementById('result-ok-btn').addEventListener('click', () => { this.hideModal('result-modal'); this.checkForNewTask(); this.render(); });
             document.querySelectorAll('.feedback-btn').forEach(btn => btn.addEventListener('click', e => this.handleForfeitFeedback(e.target.dataset.feedback)));
             document.getElementById('edit-cancel-btn').addEventListener('click', () => this.hideModal('edit-modal'));
@@ -249,8 +252,8 @@
         renderActiveTask(c){ const t = this.state.activeTask; const d = t.assignedAt + (this.state.taskDurationHours * 60 * 60 * 1000); const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg">Skip Task (${this.state.skipPasses})</button>` : ''; c.innerHTML=`<p class="text-brand-subtle mb-2">Your Orders:</p><h2 class="text-3xl font-bold text-brand-text mb-4">${t.name}</h2><div class="text-lg text-brand-warning mb-6" id="timer"></div><div class="flex justify-center space-x-4"><button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg">Complete</button>${skipButton}</div>`; const e=document.getElementById('timer'); clearInterval(this.timerInterval); this.timerInterval = setInterval(() => { const s = d - Date.now(); if (s <= 0) { clearInterval(this.timerInterval); this.failTaskByTimer(); } else { const h=Math.floor(s/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3); if(e) e.textContent=`Time left: ${h}h ${m}m ${c}s`; } }, 1000); },
         renderActiveForfeit(c){
             const f = this.state.activeTask;
-            const d = f.assignedAt + (f.currentDuration * 1000); // Deadline based on current (potentially increased) duration
-            const baseDuration = this.state.forfeits.baseDuration; // Original duration for penalty calc
+            let deadline = f.assignedAt + (f.currentDuration * 1000); // Initialize deadline
+            const baseDuration = this.state.forfeits.baseDuration;
             
             c.innerHTML=`<p class="text-brand-subtle mb-2">Your Forfeit:</p><h2 class="text-3xl font-bold text-brand-danger mb-2">${f.name}</h2><p class="text-xl text-brand-subtle mb-2">Position: ${f.position}</p><div class="text-lg text-brand-warning mb-2" id="forfeit-timer"></div><p id="total-forfeit-duration" class="text-sm text-brand-warning mb-6"></p><button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-8 rounded-lg">Forfeit Completed</button>`; 
             
@@ -259,7 +262,9 @@
             
             const updateTimerDisplay = () => {
                 const now = Date.now();
-                const timeLeft = d - now;
+                // Recalculate deadline inside interval in case currentDuration changed
+                deadline = f.assignedAt + (f.currentDuration * 1000); 
+                const timeLeft = deadline - now;
                 const currentTotalDurationStr = dayjs.duration(f.currentDuration, 'seconds').format('H[h] m[m] s[s]');
                 totalDurationEl.textContent = `(Total required: ${currentTotalDurationStr})`;
 
@@ -269,21 +274,22 @@
                     timerEl.classList.remove('text-brand-danger');
                     timerEl.classList.add('text-brand-warning');
                 } else {
-                    const overdue = now - d;
+                    const overdue = now - deadline; // Time since the *current* deadline passed
                     const oh=Math.floor(overdue/36e5),om=Math.floor(overdue%36e5/6e4),os=Math.floor(overdue%6e4/1e3);
                     timerEl.textContent = `Overdue by: ${oh}h ${om}m ${os}s`;
                     timerEl.classList.add('text-brand-danger');
                     timerEl.classList.remove('text-brand-warning');
 
-                    // Check for penalty hour
-                    const hoursOverdue = Math.floor(overdue / 3600000); // Full hours overdue
-                    if (hoursOverdue >= f.lastPenaltyHour + 1) {
-                         f.currentDuration += baseDuration;
+                    // Calculate total time overdue since the *original* deadline
+                    const originalDeadline = f.assignedAt + (baseDuration * 1000);
+                    const totalOverdueMillis = Math.max(0, now - originalDeadline); 
+                    const hoursOverdue = Math.floor(totalOverdueMillis / 3600000); // Full hours overdue
+
+                    if (hoursOverdue >= (f.lastPenaltyHour || 0) + 1) {
+                         const penaltyMultiplier = hoursOverdue; // Add base duration for each hour overdue
+                         f.currentDuration = baseDuration * (1 + penaltyMultiplier);
                          f.lastPenaltyHour = hoursOverdue;
                          this.saveState(); // Save the increased duration immediately
-                         // Update deadline for next interval check
-                         d = f.assignedAt + (f.currentDuration * 1000); 
-                         // No need to re-render, updateTimerDisplay will handle it next tick
                          console.log(`Forfeit duration increased to ${f.currentDuration} seconds`);
                     }
                 }
