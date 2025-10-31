@@ -11,7 +11,7 @@ Your performance is always being watched. The Sergeant's expression changes base
 ### Your Drill Sergeant
 Your performance is always being watched. The Sergeant's expression changes based on your **Compliance Score**, from pleased (1.png) to furious (6.png). Don't disappoint him.
 
-![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmasterimages/1.png) ![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmaster/images/2.png) ![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmaster/images/3.png) ![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmaster/images/4.png) ![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmaster/images/5.png) ![Sergeant's Face](https://raw.githubusercontent.com/timergames/Taskmasterimages/6.png)
+![Sergeant's Face](1.png) ![Sergeant's Face](2.png) ![Sergeant's Face](3.png) ![Sergeant's Face](4.png) ![Sergeant's Face](5.png) ![Sergeant's Face](6.png)
 
 Core Features
 Drill Sergeant Mode
