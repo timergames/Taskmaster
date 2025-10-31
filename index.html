@@ -54,7 +54,10 @@
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl font-sans">
         
         <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
+            <div class="flex items-center space-x-3">
+                <img id="compliance-avatar" src="1.png" alt="Compliance Status" class="h-10 w-10 md:h-12 md:w-12 rounded border-2 border-gray-600 object-cover" onerror="this.src='https://placehold.co/48x48/2c2c2c/a3a3a3?text=Err'">
+                <h1 class="text-3xl md:text-4xl font-bold text-brand-text">TaskMaster</h1>
+            </div>
             <div class="flex items-center space-x-4">
                 <div id="streak-display" class="text-right"></div>
                 <div id="points-debt-display" class="text-right"> 
@@ -84,7 +87,7 @@
 
     <!-- Modals (structure unchanged) -->
     <div id="sound-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-sm text-center p-8"><h2 class="text-2xl font-bold mb-4">Enable Sound</h2><p class="text-brand-subtle mb-6">Click the button below to enable sound notifications for new tasks.</p><button id="enable-sound-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">Enable Sound</button></div></div>
-    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Manage Your Setup</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button></div><div class="flex border-b border-gray-700 px-6 overflow-x-auto"><button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6 flex-shrink-0">Tasks</button><button data-tab="rewards" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Rewards</button><button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Forfeits</button><button data-tab="schedule" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Schedule</button><button data-tab="settings" class="tab text-lg font-semibold py-4 flex-shrink-0">Settings</button></div><div class="p-6 overflow-y-auto"><div id="tasks-tab" class="tab-content"></div><div id="rewards-tab" class="tab-content hidden"></div><div id="forfeits-tab" class="tab-content hidden"></div><div id="schedule-tab" class="tab-content hidden"></div><div id="settings-tab" class="tab-content hidden"></div></div></div></div>
+    <div id="manage-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Manage Your Setup</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="manage-modal">&times;</button></div><div class="flex border-b border-gray-700 px-6 overflow-x-auto"><button data-tab="tasks" class="tab tab-active text-lg font-semibold py-4 mr-6 flex-shrink-0">Tasks</button><button data-tab="rewards" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Rewards</button><button data-tab="forfeits" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Forfeits</button><button data-tab="schedule" class="tab text-lg font-semibold py-4 mr-6 flex-shrink-0">Schedule</button><button data-tab="settings" class="tab text-lg font-semibold py-4 flex-shrink-0">Settings</button></div><div class="p-6 overflow-y-auto"><div id="tasks-tab" class="tab-content"></div><div id="rewards-tab" class="tab-content hidden"></div><div id="forfeits-tab" class="tab-content hidden"></div><div id="schedule-tab" class="tab-content hidden"></div><div id="settings-tab" class.tab-content hidden"></div></div></div></div>
     <div id="shop-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"><div class="p-6 border-b border-gray-700 flex justify-between items-center"><h2 class="text-2xl font-bold">Reward Shop</h2><button class="close-modal-btn text-gray-400 hover:text-white" data-modal="shop-modal">&times;</button></div><div id="shop-content" class="p-6 overflow-y-auto"></div><div class="p-4 border-t border-gray-700"><button id="log-toggle-btn" class="w-full btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">View Purchase History</button></div></div></div>
     <div id="result-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 id="result-title" class="text-2xl font-bold mb-4"></h2><p id="result-message" class="text-brand-subtle mb-6"></p><div id="result-details" class="mb-6"></div><button id="result-ok-btn" class="btn w-full bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg">OK</button></div></div>
     <div id="feedback-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex justify-center items-center p-4"><div class="bg-brand-secondary rounded-2xl shadow-2xl w-full max-w-md text-center p-8"><h2 class="text-2xl font-bold mb-4">Forfeit Feedback</h2><p class="text-brand-subtle mb-6">How difficult was that forfeit?</p><div class="flex justify-around"><button data-feedback="hard" class="btn feedback-btn bg-brand-danger hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg">Hard</button><button data-feedback="ok" class="btn feedback-btn bg-brand-warning hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg">About Right</button><button data-feedback="easy" class="btn feedback-btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg">Easy</button></div></div></div>
@@ -107,30 +110,21 @@
             if (this.state.lastTaskDate !== today) {
                 this.state.lastTaskDate = today;
                 this.state.dailyTasksAssigned = 0;
-                
-                // Calculate base target tasks with +/- 20% variation
                 const baseTasks = this.state.tasksPerDay;
                 const variation = Math.round(baseTasks * 0.2);
                 const randomVariation = Math.floor(Math.random() * (variation * 2 + 1)) - variation;
                 let target = Math.max(1, Math.min(12, baseTasks + randomVariation));
-                
-                // Add bonus tasks based on current compliance
                 let bonusTasks = 0;
                 if (this.state.compliance <= 80) bonusTasks = 1;
                 if (this.state.compliance <= 60) bonusTasks = 2;
                 if (this.state.compliance <= 40) bonusTasks = 3;
                 if (this.state.compliance <= 20) bonusTasks = 4;
-                if (this.state.compliance <= 0) bonusTasks = 5; // Should be 0% not just <= 0
-                
+                if (this.state.compliance <= 0) bonusTasks = 5; 
                 target += bonusTasks;
-                
-                // Final clamping
                 this.state.targetTasksToday = Math.min(12, target); 
-                
                 console.log(`New day started. Base tasks: ${baseTasks}, Variation: ${randomVariation}, Compliance bonus: ${bonusTasks}. Final target tasks for today: ${this.state.targetTasksToday}`);
                 this.saveState();
-            } else if (!this.state.targetTasksToday) { // Ensure target exists if loaded from old save
-                 // Recalculate if missing (e.g., loading from older version)
+            } else if (!this.state.targetTasksToday || this.state.targetTasksToday < this.state.tasksPerDay) { // Recalculate if data is old or compliance dropped
                  const baseTasks = this.state.tasksPerDay;
                  let target = baseTasks; // Start with base
                  let bonusTasks = 0;
@@ -150,7 +144,40 @@
         isWithinScheduledTime() { /* ... unchanged ... */ const n=dayjs(),d=n.day(),s=this.state.schedule[d]; if(!s||s.start==='00:00'&&s.end==='00:00'){return false;} const t=dayjs(s.start,'HH:mm'),e=dayjs(s.end,'HH:mm'); if(e.isBefore(t)){return n.isAfter(t)||n.isBefore(e);}else{return n.isAfter(t)&&n.isBefore(e);} },
         startTaskAssignmentChecks() { /* ... unchanged ... */ clearInterval(this.taskAssignmentInterval); this.taskAssignmentInterval = setInterval(() => { this.checkAndAssignTask(); }, 60000); console.log("Task assignment interval started."); },
         checkAndAssignTask() { /* ... unchanged ... */ if (this.state.activeTask) return; if (!this.isWithinScheduledTime()) { this.render(); return; } if (this.state.dailyTasksAssigned >= this.state.targetTasksToday) { this.render(); return; } const tasksRemaining = this.state.targetTasksToday - this.state.dailyTasksAssigned; const now = dayjs(); const currentDay = now.day(); const schedule = this.state.schedule[currentDay]; let endTime = dayjs(schedule.end, 'HH:mm'); if (endTime.isBefore(dayjs(schedule.start, 'HH:mm'))) { endTime = endTime.add(1, 'day'); } const minutesRemaining = Math.max(1, endTime.diff(now, 'minute')); const assignProbability = Math.min(1, tasksRemaining / minutesRemaining); console.log(`Checking for task: ${tasksRemaining} left, ${minutesRemaining} mins left. Prob: ${assignProbability.toFixed(2)}`); if (Math.random() < assignProbability) { console.log("Assigning task based on probability."); this.assignTask(); this.render(); } else { console.log("Skipping assignment this minute."); this.render(); } },
-        assignTask() { /* ... unchanged ... */ const today = dayjs().day(); const scheduledTasks = this.state.tasks.filter(t => t.enabled && parseInt(t.scheduledDay) === today); const randomTasks = this.state.tasks.filter(t => t.enabled && t.scheduledDay === 'any'); let taskToAssign = null; const assignedTaskIds = []; let scheduledTaskIndex = this.state.dailyTasksAssigned; if (scheduledTaskIndex < scheduledTasks.length) { taskToAssign = scheduledTasks[scheduledTaskIndex]; console.log("Assigning scheduled task:", taskToAssign.name); } else if (randomTasks.length > 0) { taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)]; console.log("Assigning random task:", taskToAssign.name); } if (taskToAssign) { let nameString = (taskToAssign.unit === 'area') ? `${taskToAssign.name}` : `${taskToAssign.value} ${taskToAssign.unit} ${taskToAssign.name}`; this.state.activeTask = { id: taskToAssign.id, name: nameString, assignedAt: Date.now(), type: 'task', points: taskToAssign.points }; this.state.dailyTasksAssigned++; this.playNotificationSound(); this.saveState(); } else { console.log("No available tasks to assign."); } },
+        
+        assignTask() {
+            const today = dayjs().day();
+            const scheduledTasks = this.state.tasks.filter(t => t.enabled && parseInt(t.scheduledDay) === today);
+            const randomTasks = this.state.tasks.filter(t => t.enabled && t.scheduledDay === 'any');
+            
+            let taskToAssign = null;
+            let scheduledTaskIndex = this.state.dailyTasksAssigned;
+            
+            if (scheduledTaskIndex < scheduledTasks.length) { taskToAssign = scheduledTasks[scheduledTaskIndex]; } 
+            else if (randomTasks.length > 0) { taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)]; }
+            
+            if (taskToAssign) {
+                let baseName = taskToAssign.name;
+                let value = taskToAssign.value;
+                let unit = taskToAssign.unit;
+                let nameString = (unit === 'area') ? `${baseName}` : `${value} ${unit} ${baseName}`;
+                
+                this.state.activeTask = { 
+                    id: taskToAssign.id, 
+                    name: nameString, 
+                    assignedAt: Date.now(), 
+                    type: 'task', 
+                    points: taskToAssign.points,
+                    originalValue: value, // Store original value
+                    baseName: baseName,   // Store base name
+                    unit: unit            // Store unit
+                };
+                this.state.dailyTasksAssigned++;
+                this.playNotificationSound();
+                this.saveState(); 
+            }
+        },
+
         completeTask() { /* ... unchanged ... */ clearInterval(this.timerInterval); this.timerInterval = null; const task = this.state.activeTask; const originalTask = this.state.tasks.find(t => t.id === task.id); let detailsMessage = ''; if(originalTask) { originalTask.consecutiveSuccesses=(originalTask.consecutiveSuccesses||0)+1; if(originalTask.consecutiveSuccesses>=3&&originalTask.unit!=='area'){const o=originalTask.value;originalTask.value=Math.ceil(o*1.1);originalTask.consecutiveSuccesses=0;detailsMessage+=`<p class="text-brand-success mt-2">✨ ${originalTask.name} leveled up! New goal: ${originalTask.value} ${originalTask.unit}.</p>`;} } const today=dayjs().format('YYYY-MM-DD'),yesterday=dayjs().subtract(1,'day').format('YYYY-MM-DD'); if(this.state.lastStreakDate!==today){ if(this.state.lastStreakDate===yesterday){this.state.currentStreak++;} else{this.state.currentStreak=1;} this.state.lastStreakDate=today; detailsMessage+=`<p class="text-yellow-400 mt-2">🔥 Daily Streak: ${this.state.currentStreak} day(s)!</p>`;} this.state.totalTasksCompleted++; if(this.state.totalTasksCompleted>0&&this.state.totalTasksCompleted%20===0){this.state.skipPasses++;detailsMessage+=`<p class="text-blue-400 mt-2">🎟️ You earned a Skip Pass!</p>`;} this.state.points += task.points; this.state.compliance = Math.min(100, this.state.compliance + 10); this.state.activeTask = null; this.saveState(); this.showResult('Task Complete!', `You earned ${task.points} points. Compliance is now ${this.state.compliance}%.`, detailsMessage); this.checkDebtRepayment(); this.render(); },
         skipTask() { /* ... unchanged ... */ if (this.state.skipPasses > 0) { clearInterval(this.timerInterval); this.timerInterval = null; this.state.skipPasses--; this.state.activeTask = null; this.saveState(); this.showResult('Task Skipped', `You used a skip pass. You have ${this.state.skipPasses} remaining.`); this.render(); } },
         failTaskByTimer() { /* ... unchanged ... */ if (!this.state.activeTask || this.state.activeTask.type !== 'task') return; clearInterval(this.timerInterval); this.timerInterval = null; const failedTask = { ...this.state.activeTask }; let detailsMessage = ''; const originalTask = this.state.tasks.find(t => t.id === failedTask.id); if(originalTask) { originalTask.consecutiveSuccesses = 0; if (originalTask.unit !== 'area') { const o=originalTask.value; originalTask.value = Math.max(1, Math.floor(o * 0.9)); detailsMessage = `<p class="text-brand-danger mt-2">🔻 ${originalTask.name} difficulty reduced to ${originalTask.value} ${originalTask.unit}.</p>`; } } const newCompliance = Math.max(0, this.state.compliance - this.state.compliancePenalty); const newForfeit = this.calculateForfeit(); this.state.activeTask = newForfeit; this.state.compliance = newCompliance; this.state.currentStreak = 0; this.saveState(); this.render(); if (newForfeit) { this.showResult("Time's Up!", `A forfeit has been assigned. Compliance is now ${this.state.compliance}%. Your streak is broken.`, detailsMessage); } else { this.showResult('Forfeit Skipped', `Task failed, but no forfeits are enabled. Compliance is now ${this.state.compliance}%. Your streak is broken.`, detailsMessage); } },
@@ -192,9 +219,101 @@
             this.renderComplianceAvatar(); 
             this.startTimerIfNeeded(); 
         },
-        getTaskHtml() { /* ... unchanged ... */ const t = this.state.activeTask; const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg text-sm">Skip Task (${this.state.skipPasses})</button>` : ''; return `<div class="text-left flex-grow"> <p class="text-brand-subtle mb-1 text-sm">Your Orders:</p> <h2 class="text-2xl md:text-3xl font-bold text-brand-text mb-3">${t.name}</h2> <div class="text-lg text-brand-warning mb-4" id="timer">Calculating...</div> <div class="flex justify-start space-x-4"> <button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg text-sm">Complete</button> ${skipButton} </div> </div>`; },
+        getTaskHtml() {
+             const t = this.state.activeTask; 
+             const skipButton = this.state.skipPasses > 0 ? `<button id="skip-task-btn" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg text-sm">Skip Task (${this.state.skipPasses})</button>` : ''; 
+             // Use t.name here which is the *current* (potentially scaled) name
+             return `<div class="text-left flex-grow"> 
+                        <p class="text-brand-subtle mb-1 text-sm">Your Orders:</p> 
+                        <h2 class="text-2xl md:text-3xl font-bold text-brand-text mb-3">${t.name}</h2> 
+                        <div class="text-lg text-brand-warning mb-4" id="timer">Calculating...</div> 
+                        <div class="flex justify-start space-x-4"> 
+                            <button id="complete-task-btn" class="btn bg-brand-success hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg text-sm">Complete</button> 
+                            ${skipButton} 
+                        </div> 
+                     </div>`;
+        },
         getForfeitHtml() { /* ... unchanged ... */ const f = this.state.activeTask; return `<div class="text-left flex-grow"> <p class="text-brand-subtle mb-1 text-sm">Your Forfeit:</p> <h2 class="text-2xl md:text-3xl font-bold text-brand-danger mb-2">${f.name}</h2> <p class="text-lg text-brand-subtle mb-2">Position: ${f.position}</p> <div class="text-lg text-brand-warning mb-1" id="forfeit-timer">Calculating...</div> <p id="total-forfeit-duration" class="text-xs text-brand-warning mb-4"></p> <button id="complete-forfeit-btn" class="btn bg-brand-accent hover:bg-brand-accent-hover text-white font-bold py-3 px-6 rounded-lg text-sm">Forfeit Completed</button> </div>`; },
-        startTimerIfNeeded() { /* ... unchanged ... */ clearInterval(this.timerInterval); this.timerInterval = null; if (this.state.activeTask?.type === 'task') { const t = this.state.activeTask; const d = t.assignedAt + (this.state.taskDurationHours * 60 * 60 * 1000); const e = document.getElementById('timer'); if(!e) return; this.timerInterval = setInterval(() => { const s = d - Date.now(); if (s <= 0) { clearInterval(this.timerInterval); this.failTaskByTimer(); } else { const h=Math.floor(s/36e5),m=Math.floor(s%36e5/6e4),c=Math.floor(s%6e4/1e3); if(e) e.textContent=`Time left: ${h}h ${m}m ${c}s`; } }, 1000); } else if (this.state.activeTask?.type === 'forfeit') { const f = this.state.activeTask; const baseDuration = this.state.forfeits.baseDuration; const timerEl = document.getElementById('forfeit-timer'); const totalDurationEl = document.getElementById('total-forfeit-duration'); if(!timerEl || !totalDurationEl) return; const updateTimerDisplay = () => { const now = Date.now(); let deadline = f.assignedAt + (f.currentDuration * 1000); const timeLeft = deadline - now; const currentTotalDurationStr = dayjs.duration(f.currentDuration, 'seconds').format('H[h] m[m] s[s]'); totalDurationEl.textContent = `(Total required: ${currentTotalDurationStr})`; if (timeLeft > 0) { const h=Math.floor(timeLeft/36e5),m=Math.floor(timeLeft%36e5/6e4),s=Math.floor(timeLeft%6e4/1e3); timerEl.textContent = `Time left: ${h}h ${m}m ${s}s`; timerEl.classList.remove('text-brand-danger'); timerEl.classList.add('text-brand-warning'); } else { const overdue = now - deadline; const oh=Math.floor(overdue/36e5),om=Math.floor(overdue%36e5/6e4),os=Math.floor(overdue%6e4/1e3); timerEl.textContent = `Overdue by: ${oh}h ${om}m ${os}s`; timerEl.classList.add('text-brand-danger'); timerEl.classList.remove('text-brand-warning'); const originalDeadline = f.assignedAt + (baseDuration * 1000); const totalOverdueMillis = Math.max(0, now - originalDeadline); const hoursOverdue = Math.floor(totalOverdueMillis / 3600000); if (hoursOverdue >= (f.lastPenaltyHour || 0) + 1) { const penaltyMultiplier = hoursOverdue; f.currentDuration = baseDuration * (1 + penaltyMultiplier); f.lastPenaltyHour = hoursOverdue; this.saveState(); console.log(`Forfeit duration increased to ${f.currentDuration} seconds`); } } }; updateTimerDisplay(); this.timerInterval = setInterval(updateTimerDisplay, 1000); } },
+        
+        startTimerIfNeeded() {
+            clearInterval(this.timerInterval); 
+            this.timerInterval = null;
+            const activeTask = this.state.activeTask; // Get a snapshot
+
+            if (activeTask?.type === 'task') {
+                const timerEl = document.getElementById('timer');
+                const taskNameEl = document.querySelector('#main-content h2');
+                if(!timerEl || !taskNameEl) return; 
+
+                const totalDuration = this.state.taskDurationHours * 3600000;
+                const deadline = activeTask.assignedAt + totalDuration;
+
+                this.timerInterval = setInterval(() => {
+                    const timeLeft = deadline - Date.now();
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.timerInterval); 
+                        this.failTaskByTimer(); 
+                    } else {
+                        // Update timer
+                        const h=Math.floor(timeLeft/36e5),m=Math.floor(timeLeft%36e5/6e4),c=Math.floor(timeLeft%6e4/1e3);
+                        timerEl.textContent=`Time left: ${h}h ${m}m ${c}s`;
+
+                        // Update scaling reps/time
+                        if (activeTask.unit !== 'area') {
+                            const elapsedPercent = (totalDuration - timeLeft) / totalDuration;
+                            const multiplier = 1.0 + elapsedPercent; // Scale from 1.0x to 2.0x
+                            const newScaledValue = Math.ceil(activeTask.originalValue * multiplier);
+                            const newName = `${newScaledValue} ${activeTask.unit} ${activeTask.baseName}`;
+                            
+                            if (taskNameEl.textContent !== newName) {
+                                taskNameEl.textContent = newName; // Update DOM directly
+                                this.state.activeTask.name = newName; // Update state as well
+                            }
+                        }
+                    }
+                }, 1000);
+            } else if (activeTask?.type === 'forfeit') {
+                 const f = activeTask;
+                 const baseDuration = this.state.forfeits.baseDuration;
+                 const timerEl = document.getElementById('forfeit-timer');
+                 const totalDurationEl = document.getElementById('total-forfeit-duration');
+                 if(!timerEl || !totalDurationEl) return; 
+
+                 const updateTimerDisplay = () => {
+                     const now = Date.now();
+                     let deadline = f.assignedAt + (f.currentDuration * 1000); 
+                     const timeLeft = deadline - now;
+                     const currentTotalDurationStr = dayjs.duration(f.currentDuration, 'seconds').format('H[h] m[m] s[s]');
+                     totalDurationEl.textContent = `(Total required: ${currentTotalDurationStr})`;
+
+                     if (timeLeft > 0) {
+                         const h=Math.floor(timeLeft/36e5),m=Math.floor(timeLeft%36e5/6e4),s=Math.floor(timeLeft%6e4/1e3);
+                         timerEl.textContent = `Time left: ${h}h ${m}m ${s}s`;
+                         timerEl.classList.remove('text-brand-danger'); timerEl.classList.add('text-brand-warning');
+                     } else {
+                         const overdue = now - deadline; 
+                         const oh=Math.floor(overdue/36e5),om=Math.floor(overdue%36e5/6e4),os=Math.floor(overdue%6e4/1e3);
+                         timerEl.textContent = `Overdue by: ${oh}h ${om}m ${os}s`;
+                         timerEl.classList.add('text-brand-danger'); timerEl.classList.remove('text-brand-warning');
+
+                         const originalDeadline = f.assignedAt + (baseDuration * 1000);
+                         const totalOverdueMillis = Math.max(0, now - originalDeadline); 
+                         const hoursOverdue = Math.floor(totalOverdueMillis / 3600000); 
+
+                         if (hoursOverdue >= (f.lastPenaltyHour || 0) + 1) {
+                              const penaltyMultiplier = hoursOverdue;
+                              f.currentDuration = baseDuration * (1 + penaltyMultiplier);
+                              f.lastPenaltyHour = hoursOverdue;
+                              this.saveState(); 
+                              console.log(`Forfeit duration increased to ${f.currentDuration} seconds`);
+                         }
+                     }
+                 };
+                 updateTimerDisplay(); 
+                 this.timerInterval = setInterval(updateTimerDisplay, 1000);
+            }
+        },
         renderComplianceBar() { /* ... unchanged ... */ const bar = document.getElementById('compliance-bar'); const text = document.getElementById('compliance-text'); if (bar && text) { bar.style.width = `${this.state.compliance}%`; text.textContent = `Compliance: ${this.state.compliance}%`; } },
         switchTab(e){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));e.classList.add('tab-active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById(`${e.dataset.tab}-tab`).classList.remove('hidden');this.renderManagement();},
         renderManagement(){ const a=document.querySelector('#manage-modal .tab-active').dataset.tab; if(a==='tasks')this.renderList('tasks',this.state.tasks,['name','value','unit','points','scheduledDay']); if(a==='rewards')this.renderList('rewards',this.state.rewards,['name','points']); if(a==='forfeits')this.renderForfeitsTab(); if(a==='schedule')this.renderScheduleTab(); if(a==='settings')this.renderSettingsTab(); },
