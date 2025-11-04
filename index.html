@@ -99,7 +99,7 @@
         
         getDefaultState() {
             return {
-                version: 1.4, // Version bump for new feature
+                version: 1.4, // Keep version for future migrations
                 points: 100, tasksPerDay: 1, targetTasksToday: 1, activeTask: null, lastTaskDate: null,
                 dailyTasksAssigned: 0, rewardsRedeemedToday: 0, lastPriceCheckDate: null,
                 saleIsOn: false, rewardLog: [], soundInitialized: false,
@@ -121,29 +121,60 @@
         },
 
         saveState() { try { localStorage.setItem('taskmaster_state', JSON.stringify(this.state)); } catch (error) { console.error("FATAL: Could not save state!", error); } },
+        
+        // NEW: Smart merge function
+        applyLoadedState(loadedState) {
+            if (!loadedState) {
+                this.state = this.getDefaultState();
+                return;
+            }
+            
+            let defaults = this.getDefaultState();
+            
+            // Deep merge nested objects
+            const mergedForfeits = { ...defaults.forfeits, ...loadedState.forfeits };
+            const mergedSchedule = { ...defaults.schedule, ...loadedState.schedule };
+
+            // Deep merge task array (add missing properties to existing tasks)
+            const defaultTaskProps = { consecutiveSuccesses: 0, scheduledDay: 'any' };
+            const mergedTasks = (loadedState.tasks || defaults.tasks).map(task => {
+                return { ...defaultTaskProps, ...task };
+            });
+
+            // Deep merge reward array (add missing properties to existing rewards)
+            const defaultRewardProps = { enabled: true };
+            const mergedRewards = (loadedState.rewards || defaults.rewards).map(reward => {
+                return { ...defaultRewardProps, ...reward };
+            });
+
+            // Apply the deep merges
+            this.state = { 
+                ...defaults, 
+                ...loadedState,
+                forfeits: mergedForfeits,
+                schedule: mergedSchedule,
+                tasks: mergedTasks,
+                rewards: mergedRewards,
+                version: defaults.version // Force update to latest version
+            };
+            
+            // Migrate old duration prop
+            if (this.state.forfeits.duration && !this.state.forfeits.baseDuration) {
+                this.state.forfeits.baseDuration = this.state.forfeits.duration;
+            }
+            
+            console.log("Successfully merged loaded state with defaults.");
+        },
+
         loadState() {
             try {
                 const s = localStorage.getItem('taskmaster_state');
-                if (s) {
-                    let loadedState = JSON.parse(s);
-                    if (loadedState.version !== 1.4) {
-                        console.log("Old or incompatible state version. Resetting.");
-                        localStorage.removeItem('taskmaster_state');
-                        this.state = this.getDefaultState();
-                        return;
-                    }
-
-                    if (!loadedState.schedule) { loadedState.schedule = this.getDefaultState().schedule; }
-                    if (!loadedState.forfeits.baseDuration) { loadedState.forfeits.baseDuration = loadedState.forfeits.duration || 900; } 
-                    if (!loadedState.targetTasksToday) { loadedState.targetTasksToday = loadedState.tasksPerDay || 1; }
-                    if (!loadedState.failureLog) { loadedState.failureLog = []; }
-                    if (loadedState.perfectWeekStart === undefined) { loadedState.perfectWeekStart = null; }
-                    if (loadedState.hasPerfectWeekBadge === undefined) { loadedState.hasPerfectWeekBadge = false; }
-                    if(loadedState.tasks) { loadedState.tasks.forEach(t => { if (t.scheduledDay === undefined) t.scheduledDay = 'any'; if (t.consecutiveSuccesses === undefined) t.consecutiveSuccesses = 0; }); }
-                    if(loadedState.rewards) { loadedState.rewards.forEach(r => { if (r.enabled === undefined) r.enabled = true; }); }
-                    this.state = { ...this.getDefaultState(), ...loadedState };
-                } else { this.state = this.getDefaultState(); }
-            } catch (error) { console.error("Error loading state, resetting to default:", error); localStorage.removeItem('taskmaster_state'); this.state = this.getDefaultState(); }
+                this.applyLoadedState(s ? JSON.parse(s) : null);
+            } catch (error) { 
+                console.error("Error loading state, resetting to default:", error); 
+                localStorage.removeItem('taskmaster_state'); 
+                this.state = this.getDefaultState(); 
+            }
         },
 
         init() { this.loadState(); this.attachEventListeners(); if (!this.state.soundInitialized) { this.showModal('sound-modal'); } else { this.runStartupLogic(); } },
@@ -171,73 +202,12 @@
         
         playNotificationSound() { if (this.state.soundInitialized) { const synth = new Tone.Synth().toDestination(); synth.triggerAttackRelease("C5", "8n"); } },
         playCompleteSound() { if (!this.state.soundInitialized) return; const synth = new Tone.Synth().toDestination(); const now = Tone.now(); synth.triggerAttackRelease("C5", "8n", now); synth.triggerAttackRelease("G4", "8n", now + 0.3); synth.triggerAttackRelease("G4", "8n", now + 0.6); },
-        checkDateAndReset() { 
-            const today = dayjs().format('YYYY-MM-DD');
-            if (this.state.lastTaskDate !== today) {
-                if(this.state.lastComplianceCheckDate) { const lastCheck = dayjs(this.state.lastComplianceCheckDate).startOf('day'); const yesterday = dayjs().startOf('day').subtract(1, 'day'); if(lastCheck.isSame(yesterday)) { if (this.state.compliance === 100) { if (!this.state.perfectWeekStart) { this.state.perfectWeekStart = this.state.lastComplianceCheckDate; } if (dayjs(this.state.perfectWeekStart).diff(dayjs(), 'day') >= 7) { this.state.hasPerfectWeekBadge = true; } } else { this.state.perfectWeekStart = null; this.state.hasPerfectWeekBadge = false; } } } this.state.lastComplianceCheckDate = today;
-                this.state.lastTaskDate = today;
-                this.state.dailyTasksAssigned = 0;
-                const baseTasks = this.state.tasksPerDay;
-                const variation = Math.round(baseTasks * 0.2);
-                const randomVariation = Math.floor(Math.random() * (variation * 2 + 1)) - variation;
-                let target = Math.max(1, Math.min(24, baseTasks + randomVariation)); // Max 24
-                let bonusTasks = 0;
-                if (this.state.compliance <= 80) bonusTasks = 1;
-                if (this.state.compliance <= 60) bonusTasks = 2;
-                if (this.state.compliance <= 40) bonusTasks = 3;
-                if (this.state.compliance <= 20) bonusTasks = 4;
-                if (this.state.compliance <= 0) bonusTasks = 5; 
-                target += bonusTasks;
-                this.state.targetTasksToday = Math.min(24, target); // Max 24
-                console.log(`New day started. Base tasks: ${baseTasks}, Variation: ${randomVariation}, Compliance bonus: ${bonusTasks}. Final target tasks for today: ${this.state.targetTasksToday}`);
-                this.saveState();
-            } else if (!this.state.targetTasksToday || this.state.targetTasksToday < this.state.tasksPerDay) {
-                 const baseTasks = this.state.tasksPerDay;
-                 let target = baseTasks; 
-                 let bonusTasks = 0;
-                 if (this.state.compliance <= 80) bonusTasks = 1;
-                 if (this.state.compliance <= 60) bonusTasks = 2;
-                 if (this.state.compliance <= 40) bonusTasks = 3;
-                 if (this.state.compliance <= 20) bonusTasks = 4;
-                 if (this.state.compliance <= 0) bonusTasks = 5;
-                 target += bonusTasks;
-                 this.state.targetTasksToday = Math.min(24, target); // Max 24
-                 console.log(`Recalculated target tasks for today: ${this.state.targetTasksToday}`);
-                 this.saveState();
-            }
-        },
-        checkAndAdjustPrices() { const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){ if(this.state.rewardsRedeemedToday>=3){this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.saleIsOn=true;}else{this.state.saleIsOn=false;} this.state.rewardsRedeemedToday=0;} this.state.lastPriceCheckDate=t; this.saveState(); },
+        checkDateAndReset() { /* ... unchanged ... */ const today = dayjs().format('YYYY-MM-DD'); if (this.state.lastTaskDate !== today) { if(this.state.lastComplianceCheckDate) { const lastCheck = dayjs(this.state.lastComplianceCheckDate).startOf('day'); const yesterday = dayjs().startOf('day').subtract(1, 'day'); if(lastCheck.isSame(yesterday)) { if (this.state.compliance === 100) { if (!this.state.perfectWeekStart) { this.state.perfectWeekStart = this.state.lastComplianceCheckDate; } if (dayjs(this.state.perfectWeekStart).diff(dayjs(), 'day') >= 7) { this.state.hasPerfectWeekBadge = true; } } else { this.state.perfectWeekStart = null; this.state.hasPerfectWeekBadge = false; } } } this.state.lastComplianceCheckDate = today; this.state.lastTaskDate = today; this.state.dailyTasksAssigned = 0; const baseTasks = this.state.tasksPerDay; const variation = Math.round(baseTasks * 0.2); const randomVariation = Math.floor(Math.random() * (variation * 2 + 1)) - variation; let target = Math.max(1, Math.min(24, baseTasks + randomVariation)); let bonusTasks = 0; if (this.state.compliance <= 80) bonusTasks = 1; if (this.state.compliance <= 60) bonusTasks = 2; if (this.state.compliance <= 40) bonusTasks = 3; if (this.state.compliance <= 20) bonusTasks = 4; if (this.state.compliance <= 0) bonusTasks = 5; target += bonusTasks; this.state.targetTasksToday = Math.min(24, target); console.log(`New day started. Base tasks: ${baseTasks}, Variation: ${randomVariation}, Compliance bonus: ${bonusTasks}. Final target tasks for today: ${this.state.targetTasksToday}`); this.saveState(); } else if (!this.state.targetTasksToday || this.state.targetTasksToday < this.state.tasksPerDay) { const baseTasks = this.state.tasksPerDay; let target = baseTasks; let bonusTasks = 0; if (this.state.compliance <= 80) bonusTasks = 1; if (this.state.compliance <= 60) bonusTasks = 2; if (this.state.compliance <= 40) bonusTasks = 3; if (this.state.compliance <= 20) bonusTasks = 4; if (this.state.compliance <= 0) bonusTasks = 5; target += bonusTasks; this.state.targetTasksToday = Math.min(24, target); console.log(`Recalculated target tasks for today: ${this.state.targetTasksToday}`); this.saveState(); } },
+        checkAndAdjustPrices() { /* ... unchanged ... */ const t=dayjs().format('YYYY-MM-DD');if(this.state.lastPriceCheckDate&&this.state.lastPriceCheckDate!==t){ if(this.state.rewardsRedeemedToday>=3){this.state.saleIsOn=false;}else if(this.state.rewardsRedeemedToday===0){this.state.saleIsOn=true;}else{this.state.saleIsOn=false;} this.state.rewardsRedeemedToday=0;} this.state.lastPriceCheckDate=t; this.saveState(); },
         checkStreak() { /* ... unchanged ... */ if (!this.state.lastStreakDate) return; const today = dayjs().startOf('day'); const lastDate = dayjs(this.state.lastStreakDate).startOf('day'); if (today.diff(lastDate, 'day') > 1) { this.state.currentStreak = 0; } },
         isWithinScheduledTime() { /* ... unchanged ... */ const n=dayjs(),d=n.day(),s=this.state.schedule[d]; if(!s||s.start==='00:00'&&s.end==='00:00'){return false;} const t=dayjs(s.start,'HH:mm'),e=dayjs(s.end,'HH:mm'); if(e.isBefore(t)){return n.isAfter(t)||n.isBefore(e);}else{return n.isAfter(t)&&n.isBefore(e);} },
-        startTaskAssignmentChecks() { 
-            clearInterval(this.taskAssignmentInterval); 
-            const interval = this.state.debt ? 3000 : 60000;
-            this.taskAssignmentInterval = setInterval(() => { this.checkAndAssignTask(); }, interval);
-            console.log(`Task assignment interval started (checking every ${interval/1000}s).`);
-        },
-        checkAndAssignTask() {
-            if (this.state.activeTask) return; 
-            if (!this.isWithinScheduledTime()) { this.render(); return; } 
-            if (this.state.dailyTasksAssigned >= this.state.targetTasksToday) { this.render(); return; } 
-
-            const tasksRemaining = this.state.targetTasksToday - this.state.dailyTasksAssigned;
-            const now = dayjs();
-            const currentDay = now.day();
-            const schedule = this.state.schedule[currentDay];
-            let endTime = dayjs(schedule.end, 'HH:mm');
-            if (endTime.isBefore(dayjs(schedule.start, 'HH:mm'))) { endTime = endTime.add(1, 'day'); }
-            const minutesRemaining = Math.max(1, endTime.diff(now, 'minute'));
-            
-            const baseProb = tasksRemaining / minutesRemaining;
-            const assignProbability = Math.min(1, (this.state.debt ? 1.0 : baseProb * 2)); // Double probability
-            
-            if (Math.random() < assignProbability) {
-                this.assignTask();
-                this.render(); 
-            } else {
-                this.render(); 
-            }
-        },
+        startTaskAssignmentChecks() { /* ... unchanged ... */ clearInterval(this.taskAssignmentInterval); const interval = this.state.debt ? 3000 : 60000; this.taskAssignmentInterval = setInterval(() => { this.checkAndAssignTask(); }, interval); console.log(`Task assignment interval started (checking every ${interval/1000}s).`); },
+        checkAndAssignTask() { /* ... unchanged ... */ if (this.state.activeTask) return; if (!this.isWithinScheduledTime()) { this.render(); return; } if (this.state.dailyTasksAssigned >= this.state.targetTasksToday) { this.render(); return; } const tasksRemaining = this.state.targetTasksToday - this.state.dailyTasksAssigned; const now = dayjs(); const currentDay = now.day(); const schedule = this.state.schedule[currentDay]; let endTime = dayjs(schedule.end, 'HH:mm'); if (endTime.isBefore(dayjs(schedule.start, 'HH:mm'))) { endTime = endTime.add(1, 'day'); } const minutesRemaining = Math.max(1, endTime.diff(now, 'minute')); const baseProb = tasksRemaining / minutesRemaining; const assignProbability = Math.min(1, (this.state.debt ? 1.0 : baseProb * 2)); if (Math.random() < assignProbability) { this.assignTask(); this.render(); } else { this.render(); } },
         assignTask(isVolunteer = false) { /* ... unchanged ... */ const randomTasks = this.state.tasks.filter(t => t.enabled && t.scheduledDay === 'any'); let taskToAssign = null; if (isVolunteer) { if (randomTasks.length > 0) { taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)]; } } else { const today = dayjs().day(); const scheduledTasks = this.state.tasks.filter(t => t.enabled && parseInt(t.scheduledDay) === today); let scheduledTaskIndex = this.state.dailyTasksAssigned; if (scheduledTaskIndex < scheduledTasks.length) { taskToAssign = scheduledTasks[scheduledTaskIndex]; } else if (randomTasks.length > 0) { taskToAssign = randomTasks[Math.floor(Math.random() * randomTasks.length)]; } } if (taskToAssign) { let baseName = taskToAssign.name; let value = taskToAssign.value; let unit = taskToAssign.unit; let nameString = (unit === 'area') ? `${baseName}` : `${value} ${unit} ${baseName}`; let points = isVolunteer ? Math.ceil(taskToAssign.points / 2) : taskToAssign.points; this.state.activeTask = { id: taskToAssign.id, name: nameString, assignedAt: Date.now(), type: 'task', points: points, originalValue: value, baseName: baseName, unit: unit, taskStartTime: Date.now(), isVolunteer: isVolunteer }; if (!isVolunteer) { this.state.dailyTasksAssigned++; } this.playNotificationSound(); this.saveState(); } },
         volunteerForTask() { /* ... unchanged ... */ if (this.state.activeTask) { this.showResult("Error", "You already have an assignment, maggot!"); return; } this.assignTask(true); this.hideModal('shop-modal'); this.render(); setTimeout(() => { this.showResult("You want work?!", "You got it! Complete this task for half points. Get to it!"); }, 100); },
         completeTask() { /* ... (DEBT FIX HERE) ... */
@@ -294,39 +264,10 @@
         completeForfeit() { /* ... unchanged ... */ clearInterval(this.timerInterval); this.timerInterval = null; this.showModal('feedback-modal'); },
         halveForfeit() { /* ... unchanged ... */ if (this.state.skipPasses > 0 && this.state.activeTask && this.state.activeTask.type === 'forfeit') { this.state.skipPasses--; this.state.activeTask.currentDuration = Math.ceil(this.state.activeTask.currentDuration / 2); this.state.activeTask.assignedAt = Date.now(); this.state.activeTask.lastPenaltyHour = 0; this.saveState(); this.render(); } },
         handleForfeitFeedback(f){ /* ... unchanged ... */ this.state.forfeits.baseDuration = Math.round(this.state.forfeits.baseDuration * 1.1); let feedbackMsg = `Base forfeit duration increased to ${dayjs.duration(this.state.forfeits.baseDuration, 'seconds').format('m [minutes]')}.`; this.state.activeTask = null; if (this.state.forfeitQueue && this.state.forfeitQueue.length > 0) { this.state.activeTask = this.state.forfeitQueue.shift(); feedbackMsg += " Your next forfeit has been assigned. Move it!"; } this.hideModal('feedback-modal'); this.saveState(); this.showResult('Forfeit Complete', feedbackMsg); this.render(); },
-        borrowReward(e) {
-            if (this.state.debt) { this.showResult('Error', 'You already have an outstanding debt. Pay it off first.'); return; } 
-            const { id } = e.target.dataset; 
-            const reward = this.state.rewards.find(r => r.id === id); 
-            const displayPrice = this.state.saleIsOn ? Math.max(1, Math.round(reward.points * 0.95)) : reward.points;
-
-            if (reward && this.state.points < displayPrice) { 
-                const now = Date.now(); 
-                this.state.debt = { rewardId: reward.id, rewardName: reward.name, initialCost: displayPrice, amountOwed: displayPrice - this.state.points, borrowedAt: now, lastInterestCalc: now }; 
-                this.state.points = 0; 
-                this.saveState(); 
-                this.startInterestCalculation(); 
-                this.render(); 
-                this.hideModal('shop-modal'); 
-                setTimeout(() => { this.showResult('Reward Borrowed', `You borrowed "${reward.name}". You now owe ${this.state.debt.amountOwed} points. Interest will accrue hourly.`); }, 100);
-            } 
-        },
+        borrowReward(e) { /* ... (DEFERRED POPUP) ... */ if (this.state.debt) { this.showResult('Error', 'You already have an outstanding debt. Pay it off first.'); return; } const { id } = e.target.dataset; const reward = this.state.rewards.find(r => r.id === id); const displayPrice = this.state.saleIsOn ? Math.max(1, Math.round(reward.points * 0.95)) : reward.points; if (reward && this.state.points < displayPrice) { const now = Date.now(); this.state.debt = { rewardId: reward.id, rewardName: reward.name, initialCost: displayPrice, amountOwed: displayPrice - this.state.points, borrowedAt: now, lastInterestCalc: now }; this.state.points = 0; this.saveState(); this.startInterestCalculation(); this.render(); this.hideModal('shop-modal'); setTimeout(() => { this.showResult('Reward Borrowed', `You borrowed "${reward.name}". You now owe ${this.state.debt.amountOwed} points. Interest will accrue hourly.`); }, 100); } },
         startInterestCalculation() { /* ... (1% INTEREST) ... */ clearInterval(this.interestInterval); this.interestInterval = setInterval(() => { if (!this.state.debt) { clearInterval(this.interestInterval); return; } const now = Date.now(); const hoursPassed = Math.floor((now - this.state.debt.lastInterestCalc) / 3600000); if (hoursPassed > 0) { for (let i = 0; i < hoursPassed; i++) { this.state.debt.amountOwed = Math.ceil(this.state.debt.amountOwed * 1.01); } this.state.debt.lastInterestCalc = now; this.saveState(); this.renderHeader(); console.log(`Interest applied. New debt: ${this.state.debt.amountOwed}`); } }, 300000); },
         checkDebtRepayment() { /* ... unchanged ... */ if (this.state.debt && this.state.points >= this.state.debt.amountOwed) { this.state.points -= this.state.debt.amountOwed; const settledDebtName = this.state.debt.rewardName; this.state.debt = null; clearInterval(this.interestInterval); this.interestInterval = null; this.saveState(); this.showResult('Debt Settled!', `Your debt for "${settledDebtName}" has been paid off!`); this.startTaskAssignmentChecks(); } },
-        redeemReward(e){
-            const{id:t}=e.target.dataset,r=this.state.rewards.find(r=>r.id===t);
-            const displayPrice = this.state.saleIsOn ? Math.max(1, Math.round(r.points * 0.95)) : r.points;
-            
-            if(r&&this.state.points>=displayPrice){
-                this.state.points-=displayPrice;
-                this.state.rewardsRedeemedToday++;
-                this.state.rewardLog.unshift({name:r.name,points:displayPrice,redeemedAt:Date.now()});
-                this.saveState();
-                this.render();
-                this.renderShopModal(true);
-                setTimeout(() => { this.showResult('Reward Claimed!',`You redeemed "${r.name}" for ${displayPrice} points.`); }, 100);
-            }
-        },
+        redeemReward(e){ /* ... (DEFERRED POPUP) ... */ const{id:t}=e.target.dataset,r=this.state.rewards.find(r=>r.id===t); const displayPrice = this.state.saleIsOn ? Math.max(1, Math.round(r.points * 0.95)) : r.points; if(r&&this.state.points>=displayPrice){ this.state.points-=displayPrice; this.state.rewardsRedeemedToday++; this.state.rewardLog.unshift({name:r.name,points:displayPrice,redeemedAt:Date.now()}); this.saveState(); this.render(); this.renderShopModal(true); setTimeout(() => { this.showResult('Reward Claimed!',`You redeemed "${r.name}" for ${displayPrice} points.`); }, 100); } },
         
         render() { this.renderMainContent(); this.renderManagement(); this.renderHeader(); this.renderComplianceBar(); },
         
@@ -353,10 +294,31 @@
         handleSave(){/* ... unchanged ... */ const f=document.getElementById('edit-form'),{type:t,id:i,subtype:s}=f.dataset,n=i==='null';let a=n?{id:`${t.charAt(0)}${Date.now()}`,enabled:true}:{}; if(t==='tasks' && n) a.consecutiveSuccesses=0; if(t==='rewards' && n) a.enabled = true; const d=f.querySelectorAll('input, select');d.forEach(field=>{if(field.type==='number'){a[field.id]=parseInt(field.value,10)||0;}else{a[field.id]=field.value;}});if(n){if(t==='forfeits'){this.state.forfeits[s].push(a);}else{this.state[t].push(a);}}else{let c=t==='forfeits'?this.state.forfeits[s]:this.state[t];const e=c.findIndex(item=>item.id===i);if(e>-1){c[e]={...c[e],...a};}}this.saveState();this.renderManagement();this.hideModal('edit-modal');},
 
         handleDownloadSettings() { /* ... unchanged ... */ try { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `taskmaster_backup_${dayjs().format('YYYY-MM-DD')}.json`); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); } catch (error) { console.error("Error downloading settings:", error); this.showResult("Error", "Could not download settings."); } },
-        handleUploadSettings(event) { /* ... unchanged ... */ const file = event.target.files[0]; if (!file) { return; } if (file.type !== "application/json") { this.showResult("Error", "Invalid file type. Please upload a .json backup file."); return; } const reader = new FileReader(); reader.onload = (e) => { try { this.applyLoadedState(JSON.parse(e.target.result)); this.saveState(); this.showResult('Success', 'Settings restored! The app will now reload.'); setTimeout(() => location.reload(), 1500); } catch (error) { console.error("Error parsing settings file:", error); this.showResult("Error", "Invalid or corrupted settings file."); } }; reader.readAsText(file); event.target.value = null; },
+        handleUploadSettings(event) {
+            const file = event.target.files[0];
+            if (!file) { return; }
+            if (file.type !== "application/json") {
+                this.showResult("Error", "Invalid file type. Please upload a .json backup file.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    this.applyLoadedState(JSON.parse(e.target.result)); // Use smart merge
+                    this.saveState();
+                    this.showResult('Success', 'Settings restored! The app will now reload.');
+                    setTimeout(() => location.reload(), 1500);
+                } catch (error) {
+                    console.error("Error parsing settings file:", error);
+                    this.showResult("Error", "Invalid or corrupted settings file.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = null; // Clear input to allow re-uploading same file
+        },
 
         showModal(id){document.getElementById(id).classList.remove('hidden');}, hideModal(id){document.getElementById(id).classList.add('hidden');},
-        showResult(t,m,d=''){document.getElementById('result-title').textContent=t;document.getElementById('result-message').textContent=m;document.getElementById('result-details').innerHTML=d;this.showModal('result-modal');},
+        showResult(t,m,d=''){document.getElementById('result-title').textContent=t;document.getElementById('result-message').textContent=m;document.getElementById('result-details').innerHTML=d;this.showResult('result-modal');},
     };
 
     document.addEventListener('DOMContentLoaded', () => { App.init(); });
